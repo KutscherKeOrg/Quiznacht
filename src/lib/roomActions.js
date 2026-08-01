@@ -43,7 +43,7 @@ export async function revealAnswer(roomId) {
   if (error) throw error;
 }
 
-export async function nextQuestion(roomId, nextIndex, isLast) {
+export async function nextQuestion(roomId, quizId, nextIndex, isLast) {
   const { error } = await supabase
     .from("rooms")
     .update(
@@ -52,6 +52,30 @@ export async function nextQuestion(roomId, nextIndex, isLast) {
         : { current_question_index: nextIndex, revealed: false, blur: 14, sound_playing: false }
     )
     .eq("id", roomId);
+  if (error) throw error;
+  if (isLast) {
+    await markQuestionsPlayed(quizId);
+  }
+}
+
+/**
+ * Markiert alle Fragen eines Quiz im Pool als gespielt (last_played_at = jetzt),
+ * damit die automatische Zusammenstellung sie standardmäßig ausschließen kann.
+ */
+async function markQuestionsPlayed(quizId) {
+  const { data: quizQuestions, error: fetchError } = await supabase
+    .from("quiz_questions")
+    .select("question_id")
+    .eq("quiz_id", quizId);
+  if (fetchError) throw fetchError;
+
+  const questionIds = (quizQuestions || []).map((row) => row.question_id);
+  if (questionIds.length === 0) return;
+
+  const { error } = await supabase
+    .from("questions")
+    .update({ last_played_at: new Date().toISOString() })
+    .in("id", questionIds);
   if (error) throw error;
 }
 

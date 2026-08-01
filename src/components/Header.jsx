@@ -1,6 +1,11 @@
 import { C } from "../theme/colors";
 
-export function Header({ code, onLeave }) {
+const AREAS = [
+  ["play", "Spielen"],
+  ["manage", "Verwalten"],
+];
+
+export function Header({ code, onLeave, area, onAreaChange }) {
   return (
     <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
       <div className="flex items-center gap-3">
@@ -29,6 +34,23 @@ export function Header({ code, onLeave }) {
         >
           Verlassen
         </button>
+      )}
+      {onAreaChange && (
+        <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${C.line}` }}>
+          {AREAS.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => onAreaChange(key)}
+              className="px-4 py-2 text-sm font-semibold focus:outline-none"
+              style={{
+                background: area === key ? C.violet : "transparent",
+                color: area === key ? "#fff" : C.dim,
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );

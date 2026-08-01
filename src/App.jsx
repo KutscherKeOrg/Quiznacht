@@ -21,6 +21,7 @@ import { LobbyScreen } from "./screens/LobbyScreen";
 import { HostView } from "./screens/HostView";
 import { PlayerView } from "./screens/PlayerView";
 import { EndScreen } from "./screens/EndScreen";
+import { ManageScreen } from "./screens/ManageScreen";
 import { C } from "./theme/colors";
 
 export default function App() {
@@ -29,15 +30,17 @@ export default function App() {
     session?.roomId ?? null
   );
 
+  const [area, setArea] = useState("play"); // 'play' | 'manage' (nur relevant außerhalb eines Raums)
   const [quizzes, setQuizzes] = useState([]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [estimateInput, setEstimateInput] = useState("");
   const [pendingAnswer, setPendingAnswer] = useState(undefined);
 
-  // Quiz-Liste nur laden, solange wir noch keinem Raum angehören.
+  // Quiz-Liste laden, wenn wir zur Start-Ansicht wechseln (auch nach dem
+  // Anlegen neuer Quizze im Verwaltungsbereich).
   useEffect(() => {
-    if (session) return;
+    if (session || area !== "play") return;
     supabase
       .from("quizzes")
       .select("*")
@@ -45,7 +48,7 @@ export default function App() {
       .then(({ data, error }) => {
         if (!error) setQuizzes(data || []);
       });
-  }, [session]);
+  }, [session, area]);
 
   // Lokale Eingaben zurücksetzen, sobald eine neue Frage dran ist.
   useEffect(() => {
@@ -142,7 +145,9 @@ export default function App() {
 
   let content;
 
-  if (!session) {
+  if (!session && area === "manage") {
+    content = <ManageScreen />;
+  } else if (!session) {
     content = (
       <StartScreen
         quizzes={quizzes}
@@ -200,7 +205,7 @@ export default function App() {
         soundPlaying={room.sound_playing}
         onToggleSound={() => setSoundPlaying(room.id, !room.sound_playing)}
         onReveal={() => revealAnswer(room.id)}
-        onNext={() => nextQuestion(room.id, currentIndex + 1, currentIndex + 1 >= questions.length)}
+        onNext={() => nextQuestion(room.id, room.quiz_id, currentIndex + 1, currentIndex + 1 >= questions.length)}
       />
     );
   } else {
@@ -226,7 +231,12 @@ export default function App() {
   return (
     <div className="min-h-screen w-full px-4 py-6 md:px-8" style={{ background: C.bg, fontFamily: "var(--font-body)" }}>
       <div className="mx-auto" style={{ maxWidth: 1000 }}>
-        <Header code={session?.code} onLeave={session ? handleLeave : undefined} />
+        <Header
+          code={session?.code}
+          onLeave={session ? handleLeave : undefined}
+          area={!session ? area : undefined}
+          onAreaChange={!session ? setArea : undefined}
+        />
         {content}
       </div>
     </div>

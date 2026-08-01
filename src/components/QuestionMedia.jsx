@@ -15,7 +15,7 @@ export function QuestionMedia({
   if (question.type === "portrait") {
     return (
       <div className="flex flex-col items-center gap-3">
-        <PortraitImage blur={revealed ? 0 : blur} />
+        <PortraitImage blur={revealed ? 0 : blur} mediaUrl={question.media_url} />
         {isHost && !revealed && (
           <button
             onClick={onRevealBlurStep}
@@ -34,7 +34,7 @@ export function QuestionMedia({
   if (question.type === "sound") {
     return (
       <div className="flex flex-col items-center gap-3">
-        <SoundPlayer playing={soundPlaying} onToggle={onToggleSound} canControl={isHost} />
+        <SoundPlayer playing={soundPlaying} onToggle={onToggleSound} canControl={isHost} mediaUrl={question.media_url} />
         <p className="text-xs" style={{ color: C.dim }}>
           {question.note}
         </p>

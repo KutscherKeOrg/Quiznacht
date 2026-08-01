@@ -1,4 +1,4 @@
-import { CategoryChip } from "../components/CategoryChip";
+import { QuestionTypeChip } from "../components/QuestionTypeChip";
 import { ProgressDots } from "../components/ProgressDots";
 import { QuestionMedia } from "../components/QuestionMedia";
 import { Scoreboard } from "../components/Scoreboard";
@@ -28,7 +28,7 @@ export function HostView({
       {/* Bühne */}
       <div className="flex-1 rounded-2xl p-6" style={{ background: C.panel, border: `1px solid ${C.line}` }}>
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <CategoryChip type={question.type} />
+          <QuestionTypeChip type={question.type} />
           <ProgressDots questions={questions} current={currentIndex} />
         </div>
         <h2 className="mt-5 mb-6 text-center" style={{ fontSize: 26, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>

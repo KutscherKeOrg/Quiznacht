@@ -44,17 +44,21 @@ export function useRoom(roomId) {
       }
       setRoom(roomRow);
 
-      const [playersRes, questionsRes, answersRes] = await Promise.all([
+      const [playersRes, quizQuestionsRes, answersRes] = await Promise.all([
         supabase.from("players").select("*").eq("room_id", roomId).order("joined_at"),
         roomRow.quiz_id
-          ? supabase.from("questions").select("*").eq("quiz_id", roomRow.quiz_id).order("order_index")
+          ? supabase
+              .from("quiz_questions")
+              .select("order_index, question:questions(*)")
+              .eq("quiz_id", roomRow.quiz_id)
+              .order("order_index")
           : Promise.resolve({ data: [] }),
         supabase.from("answers").select("*").eq("room_id", roomId),
       ]);
 
       if (cancelled) return;
       setPlayers(playersRes.data || []);
-      setQuestions(questionsRes.data || []);
+      setQuestions((quizQuestionsRes.data || []).map((row) => row.question));
       setAnswers(answersRes.data || []);
       setLoading(false);
     }

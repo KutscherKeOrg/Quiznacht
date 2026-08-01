@@ -1,4 +1,4 @@
-import { CategoryChip } from "../components/CategoryChip";
+import { QuestionTypeChip } from "../components/QuestionTypeChip";
 import { QuestionMedia } from "../components/QuestionMedia";
 import { AnswerWidget } from "../components/AnswerWidget";
 import { C } from "../theme/colors";
@@ -22,7 +22,7 @@ export function PlayerView({
   return (
     <div className="mx-auto rounded-2xl p-6" style={{ maxWidth: 560, background: C.panel, border: `1px solid ${C.line}` }}>
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <CategoryChip type={question.type} />
+        <QuestionTypeChip type={question.type} />
         <span className="text-xs" style={{ color: C.dim }}>
           Frage {currentIndex + 1}/{totalQuestions} · Du: <b style={{ color: C.gold }}>{myScore} Pkt.</b>
         </span>

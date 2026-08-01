@@ -1,4 +1,4 @@
-import { CATEGORIES } from "../data/categories";
+import { QUESTION_TYPES } from "../data/questionTypes";
 import { C } from "../theme/colors";
 
 export function ProgressDots({ questions, current }) {
@@ -11,7 +11,7 @@ export function ProgressDots({ questions, current }) {
           style={{
             width: i === current ? 22 : 8,
             height: 8,
-            background: i < current ? C.dim : i === current ? CATEGORIES[q.type].color : C.line,
+            background: i < current ? C.dim : i === current ? QUESTION_TYPES[q.type].color : C.line,
           }}
         />
       ))}

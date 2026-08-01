@@ -1,4 +1,4 @@
-import { CATEGORIES } from "../data/categories";
+import { QUESTION_TYPES } from "../data/questionTypes";
 import { C } from "../theme/colors";
 
 export function LobbyScreen({ code, players, isHost, canStart, onStart }) {
@@ -34,7 +34,7 @@ export function LobbyScreen({ code, players, isHost, canStart, onStart }) {
         )}
       </div>
       <div className="flex justify-center gap-2 mt-6 flex-wrap">
-        {Object.values(CATEGORIES).map((c) => (
+        {Object.values(QUESTION_TYPES).map((c) => (
           <span key={c.label} className="text-xs rounded-full px-3 py-1" style={{ background: c.color + "22", color: c.color }}>
             {c.label}
           </span>
