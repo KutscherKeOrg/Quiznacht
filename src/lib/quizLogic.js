@@ -46,3 +46,18 @@ export function computeScores({ questions, answersByQuestion, players, currentIn
 
   return scores;
 }
+
+/**
+ * Wandelt { profileId, playerName, score }[] in eine Rangliste mit
+ * geteilten Plätzen bei Gleichstand um (1, 1, 3, 4, …).
+ */
+export function rankResults(results) {
+  const sorted = [...results].sort((a, b) => b.score - a.score);
+  let rank = 0;
+  let prevScore = null;
+  return sorted.map((r, i) => {
+    if (r.score !== prevScore) rank = i + 1;
+    prevScore = r.score;
+    return { ...r, rank };
+  });
+}

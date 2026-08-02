@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
+import { useAuth } from "./hooks/useAuth";
 import { useRoomSession } from "./hooks/useRoomSession";
 import { useRoom } from "./hooks/useRoom";
-import { computeScores, pointsForQuestion } from "./lib/quizLogic";
+import { computeScores, pointsForQuestion, rankResults } from "./lib/quizLogic";
+import { signOut } from "./lib/authActions";
 import {
   createRoom,
   findRoomByCode,
@@ -10,27 +12,31 @@ import {
   startQuiz,
   revealAnswer,
   nextQuestion,
+  finishRoom,
   restartRoom,
   updateBlur,
   setSoundPlaying,
   submitAnswer,
 } from "./lib/roomActions";
 import { Header } from "./components/Header";
+import { AuthScreen } from "./screens/AuthScreen";
 import { StartScreen } from "./screens/StartScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
 import { HostView } from "./screens/HostView";
 import { PlayerView } from "./screens/PlayerView";
 import { EndScreen } from "./screens/EndScreen";
 import { ManageScreen } from "./screens/ManageScreen";
+import { StatsScreen } from "./screens/StatsScreen";
 import { C } from "./theme/colors";
 
 export default function App() {
-  const [session, setSession] = useRoomSession();
+  const { user, profile, loading: authLoading } = useAuth();
+  const [roomSession, setRoomSession] = useRoomSession();
   const { room, players, questions, answersByQuestion, loading, error: roomError } = useRoom(
-    session?.roomId ?? null
+    roomSession?.roomId ?? null
   );
 
-  const [area, setArea] = useState("play"); // 'play' | 'manage' (nur relevant außerhalb eines Raums)
+  const [area, setArea] = useState("play"); // 'play' | 'manage' | 'stats' (nur relevant außerhalb eines Raums)
   const [quizzes, setQuizzes] = useState([]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
@@ -40,7 +46,7 @@ export default function App() {
   // Quiz-Liste laden, wenn wir zur Start-Ansicht wechseln (auch nach dem
   // Anlegen neuer Quizze im Verwaltungsbereich).
   useEffect(() => {
-    if (session || area !== "play") return;
+    if (roomSession || area !== "play") return;
     supabase
       .from("quizzes")
       .select("*")
@@ -48,7 +54,7 @@ export default function App() {
       .then(({ data, error }) => {
         if (!error) setQuizzes(data || []);
       });
-  }, [session, area]);
+  }, [roomSession, area]);
 
   // Lokale Eingaben zurücksetzen, sobald eine neue Frage dran ist.
   useEffect(() => {
@@ -58,17 +64,17 @@ export default function App() {
 
   // Gespeicherter Raum existiert nicht mehr (z.B. gelöscht) -> zurück zum Start.
   useEffect(() => {
-    if (session && !loading && roomError) {
-      setSession(null);
+    if (roomSession && !loading && roomError) {
+      setRoomSession(null);
     }
-  }, [session, loading, roomError, setSession]);
+  }, [roomSession, loading, roomError, setRoomSession]);
 
   async function handleCreateRoom(quizId) {
     setBusy(true);
     setActionError("");
     try {
       const newRoom = await createRoom(quizId);
-      setSession({ roomId: newRoom.id, code: newRoom.code, role: "host" });
+      setRoomSession({ roomId: newRoom.id, code: newRoom.code, role: "host" });
     } catch (err) {
       setActionError("Raum konnte nicht erstellt werden: " + err.message);
     } finally {
@@ -76,7 +82,7 @@ export default function App() {
     }
   }
 
-  async function handleJoinRoom(code, name) {
+  async function handleJoinRoom(code) {
     setBusy(true);
     setActionError("");
     try {
@@ -89,8 +95,8 @@ export default function App() {
         setActionError("Dieser Raum hat schon gestartet – frag den Host nach einem neuen Code.");
         return;
       }
-      const player = await joinRoom(foundRoom.id, name);
-      setSession({
+      const player = await joinRoom(foundRoom.id, profile.id, profile.display_name);
+      setRoomSession({
         roomId: foundRoom.id,
         code: foundRoom.code,
         role: "player",
@@ -99,7 +105,7 @@ export default function App() {
       });
     } catch (err) {
       if (err.code === "23505") {
-        setActionError("Dieser Name ist in diesem Raum schon vergeben.");
+        setActionError("Du bist diesem Raum schon beigetreten.");
       } else {
         setActionError("Beitreten fehlgeschlagen: " + err.message);
       }
@@ -109,21 +115,24 @@ export default function App() {
   }
 
   function handleLeave() {
-    setSession(null);
+    setRoomSession(null);
     setActionError("");
   }
 
   async function handleSubmitAnswer(value) {
     setPendingAnswer(value);
+    const elapsedMs = room.question_started_at
+      ? Date.now() - new Date(room.question_started_at).getTime()
+      : null;
     try {
-      await submitAnswer(room.id, question.id, session.playerId, value);
+      await submitAnswer(room.id, question.id, roomSession.playerId, value, elapsedMs);
     } catch (err) {
       setPendingAnswer(undefined);
       console.error("Antwort konnte nicht gespeichert werden:", err);
     }
   }
 
-  const isHost = session?.role === "host";
+  const isHost = roomSession?.role === "host";
   const currentIndex = room?.current_question_index ?? 0;
   const question = questions[currentIndex];
   const qAnswers = question ? answersByQuestion[question.id] || {} : {};
@@ -143,13 +152,44 @@ export default function App() {
     );
   }, [question, revealed, room?.phase, qAnswers, players]);
 
+  async function handleNext() {
+    const isLast = currentIndex + 1 >= questions.length;
+    if (!isLast) {
+      await nextQuestion(room.id, currentIndex + 1);
+      return;
+    }
+    const results = rankResults(
+      players.map((p) => ({ profileId: p.profile_id, playerName: p.name, score: scores[p.id] || 0 }))
+    );
+    await finishRoom(room.id, room.quiz_id, results);
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center" style={{ background: C.bg }}>
+        <p style={{ color: C.dim }}>Lade…</p>
+      </div>
+    );
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen w-full px-4 py-6 md:px-8" style={{ background: C.bg, fontFamily: "var(--font-body)" }}>
+        <AuthScreen />
+      </div>
+    );
+  }
+
   let content;
 
-  if (!session && area === "manage") {
+  if (!roomSession && area === "manage") {
     content = <ManageScreen />;
-  } else if (!session) {
+  } else if (!roomSession && area === "stats") {
+    content = <StatsScreen />;
+  } else if (!roomSession) {
     content = (
       <StartScreen
+        displayName={profile.display_name}
         quizzes={quizzes}
         onCreateRoom={handleCreateRoom}
         onJoinRoom={handleJoinRoom}
@@ -179,7 +219,7 @@ export default function App() {
       <EndScreen
         players={players}
         scores={scores}
-        youId={session.playerId}
+        youId={roomSession.playerId}
         isHost={isHost}
         onRestart={() => restartRoom(room.id)}
       />
@@ -206,11 +246,11 @@ export default function App() {
         soundPlaying={room.sound_playing}
         onToggleSound={() => setSoundPlaying(room.id, !room.sound_playing)}
         onReveal={() => revealAnswer(room.id)}
-        onNext={() => nextQuestion(room.id, room.quiz_id, currentIndex + 1, currentIndex + 1 >= questions.length)}
+        onNext={handleNext}
       />
     );
   } else {
-    const myAnswer = qAnswers[session.playerId] ?? pendingAnswer;
+    const myAnswer = qAnswers[roomSession.playerId] ?? pendingAnswer;
     content = (
       <PlayerView
         question={question}
@@ -218,8 +258,8 @@ export default function App() {
         totalQuestions={questions.length}
         myAnswer={myAnswer}
         revealed={revealed}
-        myPoints={lastPts[session.playerId] || 0}
-        myScore={scores[session.playerId] || 0}
+        myPoints={lastPts[roomSession.playerId] || 0}
+        myScore={scores[roomSession.playerId] || 0}
         blur={room.blur}
         soundPlaying={room.sound_playing}
         estimateInput={estimateInput}
@@ -233,10 +273,12 @@ export default function App() {
     <div className="min-h-screen w-full px-4 py-6 md:px-8" style={{ background: C.bg, fontFamily: "var(--font-body)" }}>
       <div className="mx-auto" style={{ maxWidth: 1000 }}>
         <Header
-          code={session?.code}
-          onLeave={session ? handleLeave : undefined}
-          area={!session ? area : undefined}
-          onAreaChange={!session ? setArea : undefined}
+          code={roomSession?.code}
+          onLeave={roomSession ? handleLeave : undefined}
+          area={!roomSession ? area : undefined}
+          onAreaChange={!roomSession ? setArea : undefined}
+          displayName={!roomSession ? profile.display_name : undefined}
+          onSignOut={signOut}
         />
         {content}
       </div>

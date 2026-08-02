@@ -20,10 +20,10 @@ export async function findRoomByCode(code) {
   return data;
 }
 
-export async function joinRoom(roomId, name) {
+export async function joinRoom(roomId, profileId, displayName) {
   const { data, error } = await supabase
     .from("players")
-    .insert({ room_id: roomId, name })
+    .insert({ room_id: roomId, profile_id: profileId, name: displayName })
     .select()
     .single();
   if (error) throw error;
@@ -33,7 +33,14 @@ export async function joinRoom(roomId, name) {
 export async function startQuiz(roomId) {
   const { error } = await supabase
     .from("rooms")
-    .update({ phase: "question", current_question_index: 0, revealed: false, blur: 14, sound_playing: false })
+    .update({
+      phase: "question",
+      current_question_index: 0,
+      revealed: false,
+      blur: 14,
+      sound_playing: false,
+      question_started_at: new Date().toISOString(),
+    })
     .eq("id", roomId);
   if (error) throw error;
 }
@@ -43,19 +50,47 @@ export async function revealAnswer(roomId) {
   if (error) throw error;
 }
 
-export async function nextQuestion(roomId, quizId, nextIndex, isLast) {
+export async function nextQuestion(roomId, nextIndex) {
   const { error } = await supabase
     .from("rooms")
-    .update(
-      isLast
-        ? { phase: "end" }
-        : { current_question_index: nextIndex, revealed: false, blur: 14, sound_playing: false }
-    )
+    .update({
+      current_question_index: nextIndex,
+      revealed: false,
+      blur: 14,
+      sound_playing: false,
+      question_started_at: new Date().toISOString(),
+    })
     .eq("id", roomId);
   if (error) throw error;
-  if (isLast) {
-    await markQuestionsPlayed(quizId);
+}
+
+/**
+ * Beendet ein Spiel: setzt die Phase auf 'end', speichert die Endplatzierung
+ * je Spieler:in (für die "meiste Siege"-Statistik) und markiert alle Fragen
+ * des Quiz im Pool als gespielt.
+ * @param {{ profileId: string, playerName: string, score: number, rank: number }[]} results
+ */
+export async function finishRoom(roomId, quizId, results) {
+  const { error: roomErr } = await supabase.from("rooms").update({ phase: "end" }).eq("id", roomId);
+  if (roomErr) throw roomErr;
+
+  if (results.length > 0) {
+    const { error: resultsErr } = await supabase
+      .from("room_results")
+      .upsert(
+        results.map((r) => ({
+          room_id: roomId,
+          profile_id: r.profileId,
+          player_name: r.playerName,
+          score: r.score,
+          rank: r.rank,
+        })),
+        { onConflict: "room_id,profile_id" }
+      );
+    if (resultsErr) throw resultsErr;
   }
+
+  await markQuestionsPlayed(quizId);
 }
 
 /**
@@ -84,7 +119,14 @@ export async function restartRoom(roomId) {
   if (deleteError) throw deleteError;
   const { error } = await supabase
     .from("rooms")
-    .update({ phase: "lobby", current_question_index: 0, revealed: false, blur: 14, sound_playing: false })
+    .update({
+      phase: "lobby",
+      current_question_index: 0,
+      revealed: false,
+      blur: 14,
+      sound_playing: false,
+      question_started_at: null,
+    })
     .eq("id", roomId);
   if (error) throw error;
 }
@@ -99,9 +141,15 @@ export async function setSoundPlaying(roomId, playing) {
   if (error) throw error;
 }
 
-export async function submitAnswer(roomId, questionId, playerId, value) {
+export async function submitAnswer(roomId, questionId, playerId, value, elapsedMs) {
   const { error } = await supabase
     .from("answers")
-    .insert({ room_id: roomId, question_id: questionId, player_id: playerId, value: String(value) });
+    .insert({
+      room_id: roomId,
+      question_id: questionId,
+      player_id: playerId,
+      value: String(value),
+      elapsed_ms: elapsedMs ?? null,
+    });
   if (error) throw error;
 }
