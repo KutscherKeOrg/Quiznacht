@@ -167,6 +167,7 @@ export default function App() {
     content = (
       <LobbyScreen
         code={room.code}
+        quizTitle={room.quiz?.title}
         players={players}
         isHost={isHost}
         canStart={players.length > 0 && questions.length > 0}

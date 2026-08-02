@@ -1,11 +1,11 @@
 import { QUESTION_TYPES } from "../data/questionTypes";
 import { C } from "../theme/colors";
 
-export function LobbyScreen({ code, players, isHost, canStart, onStart }) {
+export function LobbyScreen({ code, quizTitle, players, isHost, canStart, onStart }) {
   return (
     <div className="text-center py-10">
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 40, color: C.text, lineHeight: 1.1 }}>
-        Freitags-<span style={{ color: C.gold }}>Quiz</span>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 40, color: C.gold, lineHeight: 1.1 }}>
+        {quizTitle || "Quiznacht"}
       </div>
       <p className="mt-3" style={{ color: C.dim }}>
         Raumcode:{" "}

@@ -32,7 +32,7 @@ export function useRoom(roomId) {
     async function load() {
       const { data: roomRow, error: roomErr } = await supabase
         .from("rooms")
-        .select("*")
+        .select("*, quiz:quizzes(title)")
         .eq("id", roomId)
         .maybeSingle();
 
@@ -70,7 +70,7 @@ export function useRoom(roomId) {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "rooms", filter: `id=eq.${roomId}` },
-        (payload) => setRoom(payload.new)
+        (payload) => setRoom((prev) => ({ ...payload.new, quiz: prev?.quiz }))
       )
       .on(
         "postgres_changes",
