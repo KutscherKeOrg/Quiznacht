@@ -81,6 +81,13 @@ export function useRoom(roomId) {
       )
       .on(
         "postgres_changes",
+        { event: "DELETE", schema: "public", table: "players", filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setPlayers((prev) => prev.filter((p) => p.id !== payload.old.id));
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "answers", filter: `room_id=eq.${roomId}` },
         (payload) => {
           setAnswers((prev) => (prev.some((a) => a.id === payload.new.id) ? prev : [...prev, payload.new]));
