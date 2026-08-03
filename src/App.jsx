@@ -44,9 +44,10 @@ export default function App() {
   const [pendingAnswer, setPendingAnswer] = useState(undefined);
 
   // Quiz-Liste laden, wenn wir zur Start-Ansicht wechseln (auch nach dem
-  // Anlegen neuer Quizze im Verwaltungsbereich).
+  // Anlegen neuer Quizze im Verwaltungsbereich, oder sobald der Login
+  // abgeschlossen ist).
   useEffect(() => {
-    if (roomSession || area !== "play") return;
+    if (!user || roomSession || area !== "play") return;
     supabase
       .from("quizzes")
       .select("*")
@@ -54,7 +55,7 @@ export default function App() {
       .then(({ data, error }) => {
         if (!error) setQuizzes(data || []);
       });
-  }, [roomSession, area]);
+  }, [user, roomSession, area]);
 
   // Lokale Eingaben zurücksetzen, sobald eine neue Frage dran ist.
   useEffect(() => {
