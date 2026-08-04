@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { QUESTION_TYPES } from "../../data/questionTypes";
 import { createQuestion, updateQuestion, deleteQuestion } from "../../lib/poolActions";
 import { QuestionForm } from "./QuestionForm";
+import { BulkImportForm } from "./BulkImportForm";
 import { C } from "../../theme/colors";
 
 function formatDate(iso) {
@@ -88,6 +89,19 @@ export function QuestionsTab({ pool }) {
     );
   }
 
+  if (mode === "bulk") {
+    return (
+      <BulkImportForm
+        categories={categories}
+        onCancel={() => setMode("list")}
+        onDone={async () => {
+          setMode("list");
+          await refresh();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
@@ -126,14 +140,24 @@ export function QuestionsTab({ pool }) {
             style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
           />
         </div>
-        <button
-          onClick={() => setMode("create")}
-          disabled={categories.length === 0}
-          className="rounded-xl px-5 py-2 font-bold focus:outline-none focus:ring-2 disabled:opacity-50"
-          style={{ background: C.gold, color: "#221D00" }}
-        >
-          + Neue Frage
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setMode("bulk")}
+            disabled={categories.length === 0}
+            className="rounded-xl px-5 py-2 font-bold focus:outline-none focus:ring-2 disabled:opacity-50"
+            style={{ background: C.panelSoft, color: C.violet, border: `1px solid ${C.line}` }}
+          >
+            Bulk-Import
+          </button>
+          <button
+            onClick={() => setMode("create")}
+            disabled={categories.length === 0}
+            className="rounded-xl px-5 py-2 font-bold focus:outline-none focus:ring-2 disabled:opacity-50"
+            style={{ background: C.gold, color: "#221D00" }}
+          >
+            + Neue Frage
+          </button>
+        </div>
       </div>
 
       {categories.length === 0 && (
