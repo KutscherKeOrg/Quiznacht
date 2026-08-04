@@ -13,8 +13,8 @@ export function PlayerView({
   myScore,
   blur,
   soundPlaying,
-  estimateInput,
-  onEstimateInputChange,
+  textInput,
+  onTextInputChange,
   onSubmit,
 }) {
   const youAnswered = myAnswer !== undefined;
@@ -37,8 +37,8 @@ export function PlayerView({
           myAnswer={myAnswer}
           youAnswered={youAnswered}
           revealed={revealed}
-          estimateInput={estimateInput}
-          onEstimateInputChange={onEstimateInputChange}
+          textInput={textInput}
+          onTextInputChange={onTextInputChange}
           onSubmit={onSubmit}
         />
       </div>
@@ -62,6 +62,11 @@ export function PlayerView({
           {question.type === "schaetzfrage" && (
             <div className="text-sm mt-1" style={{ color: C.dim }}>
               Richtig: {question.correct_value} {question.unit} · Deine Schätzung: {myAnswer ?? "—"}
+            </div>
+          )}
+          {question.type === "portrait" && (
+            <div className="text-sm mt-1" style={{ color: C.dim }}>
+              Richtig: {question.correct_answer} · Deine Antwort: {myAnswer ?? "—"}
             </div>
           )}
         </div>

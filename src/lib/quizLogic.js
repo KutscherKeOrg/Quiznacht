@@ -1,5 +1,12 @@
 export const ESTIMATE_POINTS = [100, 70, 50, 30, 10];
 
+function normalizeText(value) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
 /**
  * @param {object} question - Fragen-Zeile aus der DB (type, correct_answer, correct_value)
  * @param {Record<string, string>} answersByPlayerId - { [playerId]: abgegebener Wert (immer als Text) }
@@ -15,6 +22,13 @@ export function pointsForQuestion(question, answersByPlayerId, playerIds) {
       .sort((a, b) => a.d - b.d);
     ranked.forEach((r, i) => {
       pts[r.id] = ESTIMATE_POINTS[i] ?? 0;
+    });
+  } else if (question.type === "portrait") {
+    // Portrait ist eine offene Texteingabe -> Groß-/Kleinschreibung und
+    // überflüssige Leerzeichen sollen keinen sonst richtigen Tipp kosten.
+    const correct = normalizeText(question.correct_answer);
+    playerIds.forEach((id) => {
+      pts[id] = normalizeText(answersByPlayerId[id]) === correct ? 100 : 0;
     });
   } else {
     playerIds.forEach((id) => {

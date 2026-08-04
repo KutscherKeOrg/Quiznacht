@@ -18,6 +18,17 @@ export async function deleteCategory(id) {
   if (error) throw error;
 }
 
+/* ---------- Medien-Upload (Portrait-Bilder, Sound-Dateien) ---------- */
+
+export async function uploadQuestionMedia(file, mediaKind) {
+  const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+  const path = `${mediaKind}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabase.storage.from("question-media").upload(path, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from("question-media").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 /* ---------- Fragenpool ---------- */
 
 export async function createQuestion(question) {

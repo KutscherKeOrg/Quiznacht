@@ -40,7 +40,7 @@ export default function App() {
   const [quizzes, setQuizzes] = useState([]);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [estimateInput, setEstimateInput] = useState("");
+  const [textInput, setTextInput] = useState("");
   const [pendingAnswer, setPendingAnswer] = useState(undefined);
 
   // Quiz-Liste laden, wenn wir zur Start-Ansicht wechseln (auch nach dem
@@ -59,7 +59,7 @@ export default function App() {
 
   // Lokale Eingaben zurücksetzen, sobald eine neue Frage dran ist.
   useEffect(() => {
-    setEstimateInput("");
+    setTextInput("");
     setPendingAnswer(undefined);
   }, [room?.current_question_index]);
 
@@ -263,8 +263,8 @@ export default function App() {
         myScore={scores[roomSession.playerId] || 0}
         blur={room.blur}
         soundPlaying={room.sound_playing}
-        estimateInput={estimateInput}
-        onEstimateInputChange={setEstimateInput}
+        textInput={textInput}
+        onTextInputChange={setTextInput}
         onSubmit={handleSubmitAnswer}
       />
     );

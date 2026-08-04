@@ -6,8 +6,8 @@ export function AnswerWidget({
   myAnswer,
   youAnswered,
   revealed,
-  estimateInput,
-  onEstimateInputChange,
+  textInput,
+  onTextInputChange,
   onSubmit,
 }) {
   if (question.type === "schaetzfrage") {
@@ -20,14 +20,42 @@ export function AnswerWidget({
             <input
               type="number"
               inputMode="numeric"
-              value={estimateInput}
-              onChange={(e) => onEstimateInputChange(e.target.value)}
+              value={textInput}
+              onChange={(e) => onTextInputChange(e.target.value)}
               placeholder="Deine Schätzung…"
               className="flex-1 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
               style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
             />
             <button
-              onClick={() => estimateInput !== "" && onSubmit(Number(estimateInput))}
+              onClick={() => textInput !== "" && onSubmit(Number(textInput))}
+              className="rounded-xl px-5 font-bold focus:outline-none focus:ring-2"
+              style={{ background: C.gold, color: "#221D00" }}
+            >
+              Einloggen
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (question.type === "portrait") {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        {youAnswered ? (
+          <LockedNote value={myAnswer} />
+        ) : (
+          <div className="flex gap-2 w-full" style={{ maxWidth: 340 }}>
+            <input
+              type="text"
+              value={textInput}
+              onChange={(e) => onTextInputChange(e.target.value)}
+              placeholder="Deine Vermutung…"
+              className="flex-1 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
+              style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
+            />
+            <button
+              onClick={() => textInput.trim() !== "" && onSubmit(textInput.trim())}
               className="rounded-xl px-5 font-bold focus:outline-none focus:ring-2"
               style={{ background: C.gold, color: "#221D00" }}
             >

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { QUESTION_TYPES } from "../../data/questionTypes";
+import { uploadQuestionMedia } from "../../lib/poolActions";
 import { C } from "../../theme/colors";
 
 const EMPTY_OPTIONS = ["", ""];
@@ -22,8 +23,10 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
   const [message, setMessage] = useState(initialQuestion?.message ?? "");
   const [note, setNote] = useState(initialQuestion?.note ?? "");
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const needsOptions = type === "multiple_choice" || type === "portrait" || type === "chat";
+  const isPortraitOpen = type === "portrait";
+  const needsOptions = type === "multiple_choice" || type === "chat";
   const isEstimate = type === "schaetzfrage";
   const isChat = type === "chat";
   const isMedia = type === "portrait" || type === "sound";
@@ -39,6 +42,20 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
     setOptions((prev) => prev.filter((_, idx) => idx !== i));
   }
 
+  async function handleFileSelected(file) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadQuestionMedia(file, type);
+      setMediaUrl(url);
+    } catch (err) {
+      setError("Upload fehlgeschlagen: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   function handleSubmit() {
     setError("");
     if (!categoryId) return setError("Bitte eine Kategorie wählen.");
@@ -52,6 +69,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
         return setError("Bitte die richtige Antwort markieren.");
       }
     }
+    if (isPortraitOpen && !correctAnswer.trim()) return setError("Bitte die richtige Antwort eingeben.");
     if (isChat && !message.trim()) return setError("Bitte den Nachrichtentext eingeben.");
     if (isEstimate) {
       if (correctValue === "" || Number.isNaN(Number(correctValue))) return setError("Bitte eine gültige Zahl eingeben.");
@@ -63,7 +81,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
       type,
       prompt: prompt.trim(),
       options: needsOptions ? cleanOptions : null,
-      correct_answer: needsOptions ? correctAnswer : null,
+      correct_answer: needsOptions ? correctAnswer : isPortraitOpen ? correctAnswer.trim() : null,
       correct_value: isEstimate ? Number(correctValue) : null,
       unit: isEstimate ? unit.trim() : null,
       media_url: isMedia ? mediaUrl.trim() || null : null,
@@ -176,6 +194,21 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
         </div>
       )}
 
+      {isPortraitOpen && (
+        <div className="mb-4">
+          <label className="block text-xs mb-2" style={{ color: C.dim }}>
+            Richtige Antwort (frei eingetippt, Groß-/Kleinschreibung egal)
+          </label>
+          <input
+            value={correctAnswer}
+            onChange={(e) => setCorrectAnswer(e.target.value)}
+            placeholder="z.B. Alrik der Graue"
+            className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
+            style={inputStyle}
+          />
+        </div>
+      )}
+
       {needsOptions && (
         <div className="mb-4">
           <label className="block text-xs mb-2" style={{ color: C.dim }}>
@@ -229,15 +262,44 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
         <div className="grid gap-4 sm:grid-cols-2 mb-4">
           <div>
             <label className="block text-xs mb-2" style={{ color: C.dim }}>
-              {type === "portrait" ? "Bild-URL" : "Audio-URL"} (optional)
+              {type === "portrait" ? "Bild" : "Audio"} (optional)
             </label>
             <input
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
-              placeholder="https://…"
-              className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
+              placeholder="URL einfügen …"
+              className="w-full rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2"
               style={inputStyle}
             />
+            <div className="flex items-center gap-3">
+              <label
+                className="text-sm font-semibold px-3 py-2 rounded-lg cursor-pointer focus-within:ring-2"
+                style={{ background: C.panelSoft, color: C.violet, border: `1px solid ${C.line}` }}
+              >
+                {uploading ? "Lädt hoch…" : "…oder Datei hochladen"}
+                <input
+                  type="file"
+                  accept={type === "portrait" ? "image/*" : "audio/*"}
+                  onChange={(e) => handleFileSelected(e.target.files?.[0])}
+                  disabled={uploading}
+                  className="hidden"
+                />
+              </label>
+              {mediaUrl && (
+                <button
+                  type="button"
+                  onClick={() => setMediaUrl("")}
+                  className="text-xs px-2 py-1 rounded"
+                  style={{ color: C.pink }}
+                >
+                  Entfernen
+                </button>
+              )}
+            </div>
+            {mediaUrl && type === "portrait" && (
+              <img src={mediaUrl} alt="" className="mt-3 rounded-lg w-24 h-24 object-cover" />
+            )}
+            {mediaUrl && type === "sound" && <audio src={mediaUrl} controls className="mt-3 w-full" />}
           </div>
           <div>
             <label className="block text-xs mb-2" style={{ color: C.dim }}>
@@ -268,7 +330,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
           Abbrechen
         </button>
         <button
-          disabled={busy}
+          disabled={busy || uploading}
           onClick={handleSubmit}
           className="rounded-xl px-5 py-3 font-bold focus:outline-none focus:ring-2 disabled:opacity-50"
           style={{ background: C.gold, color: "#221D00" }}
