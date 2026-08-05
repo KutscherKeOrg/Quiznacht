@@ -8,6 +8,19 @@ function normalizeText(value) {
 }
 
 /**
+ * Ob eine abgegebene Antwort für Fragetypen mit binärer richtig/falsch-Wertung
+ * (alle außer Schätzfrage) korrekt ist. Portrait vergleicht dabei normalisiert
+ * (Groß-/Kleinschreibung, überflüssige Leerzeichen), der Rest exakt.
+ */
+export function isAnswerCorrect(question, value) {
+  if (value === undefined) return false;
+  if (question.type === "portrait") {
+    return normalizeText(value) === normalizeText(question.correct_answer);
+  }
+  return value === question.correct_answer;
+}
+
+/**
  * @param {object} question - Fragen-Zeile aus der DB (type, correct_answer, correct_value)
  * @param {Record<string, string>} answersByPlayerId - { [playerId]: abgegebener Wert (immer als Text) }
  * @param {string[]} playerIds
@@ -23,16 +36,9 @@ export function pointsForQuestion(question, answersByPlayerId, playerIds) {
     ranked.forEach((r, i) => {
       pts[r.id] = ESTIMATE_POINTS[i] ?? 0;
     });
-  } else if (question.type === "portrait") {
-    // Portrait ist eine offene Texteingabe -> Groß-/Kleinschreibung und
-    // überflüssige Leerzeichen sollen keinen sonst richtigen Tipp kosten.
-    const correct = normalizeText(question.correct_answer);
-    playerIds.forEach((id) => {
-      pts[id] = normalizeText(answersByPlayerId[id]) === correct ? 100 : 0;
-    });
   } else {
     playerIds.forEach((id) => {
-      pts[id] = answersByPlayerId[id] === question.correct_answer ? 100 : 0;
+      pts[id] = isAnswerCorrect(question, answersByPlayerId[id]) ? 100 : 0;
     });
   }
   return pts;

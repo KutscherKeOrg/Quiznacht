@@ -37,11 +37,17 @@ export async function startQuiz(roomId) {
       phase: "question",
       current_question_index: 0,
       revealed: false,
+      locked: false,
       blur: 14,
       sound_playing: false,
       question_started_at: new Date().toISOString(),
     })
     .eq("id", roomId);
+  if (error) throw error;
+}
+
+export async function lockAnswers(roomId) {
+  const { error } = await supabase.from("rooms").update({ locked: true }).eq("id", roomId);
   if (error) throw error;
 }
 
@@ -56,6 +62,44 @@ export async function nextQuestion(roomId, nextIndex) {
     .update({
       current_question_index: nextIndex,
       revealed: false,
+      locked: false,
+      blur: 14,
+      sound_playing: false,
+      question_started_at: new Date().toISOString(),
+    })
+    .eq("id", roomId);
+  if (error) throw error;
+}
+
+/**
+ * Überspringt die aktuelle Frage ohne Wertung: löscht bereits abgegebene
+ * Antworten dafür (damit sie nicht rückwirkend zählt) und rückt vor.
+ */
+export async function skipQuestion(roomId, questionId) {
+  const { error } = await supabase.from("answers").delete().eq("room_id", roomId).eq("question_id", questionId);
+  if (error) throw error;
+}
+
+/**
+ * Springt zur vorherigen Frage zurück und setzt sie für eine saubere
+ * Wiederholung zurück. Löscht die Antworten der verlassenen UND der
+ * Zielfrage, damit niemand als "schon beantwortet" hängen bleibt.
+ */
+export async function goToPreviousQuestion(roomId, questionIdsToReset, targetIndex) {
+  if (questionIdsToReset.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("answers")
+      .delete()
+      .eq("room_id", roomId)
+      .in("question_id", questionIdsToReset);
+    if (deleteError) throw deleteError;
+  }
+  const { error } = await supabase
+    .from("rooms")
+    .update({
+      current_question_index: targetIndex,
+      revealed: false,
+      locked: false,
       blur: 14,
       sound_playing: false,
       question_started_at: new Date().toISOString(),
@@ -123,6 +167,7 @@ export async function restartRoom(roomId) {
       phase: "lobby",
       current_question_index: 0,
       revealed: false,
+      locked: false,
       blur: 14,
       sound_playing: false,
       question_started_at: null,

@@ -10,8 +10,11 @@ import {
   findRoomByCode,
   joinRoom,
   startQuiz,
+  lockAnswers,
   revealAnswer,
   nextQuestion,
+  skipQuestion,
+  goToPreviousQuestion,
   finishRoom,
   restartRoom,
   updateBlur,
@@ -32,7 +35,7 @@ import { C } from "./theme/colors";
 export default function App() {
   const { user, profile, loading: authLoading } = useAuth();
   const [roomSession, setRoomSession] = useRoomSession();
-  const { room, players, questions, answersByQuestion, loading, error: roomError } = useRoom(
+  const { room, players, questions, answersByQuestion, loading, error: roomError, refetchAnswers } = useRoom(
     roomSession?.roomId ?? null
   );
 
@@ -121,6 +124,7 @@ export default function App() {
   }
 
   async function handleSubmitAnswer(value) {
+    if (room.locked || revealed) return;
     setPendingAnswer(value);
     const elapsedMs = room.question_started_at
       ? Date.now() - new Date(room.question_started_at).getTime()
@@ -153,7 +157,7 @@ export default function App() {
     );
   }, [question, revealed, room?.phase, qAnswers, players]);
 
-  async function handleNext() {
+  async function advanceOrFinish() {
     const isLast = currentIndex + 1 >= questions.length;
     if (!isLast) {
       await nextQuestion(room.id, currentIndex + 1);
@@ -163,6 +167,23 @@ export default function App() {
       players.map((p) => ({ profileId: p.profile_id, playerName: p.name, score: scores[p.id] || 0 }))
     );
     await finishRoom(room.id, room.quiz_id, results);
+  }
+
+  async function handleNext() {
+    await advanceOrFinish();
+  }
+
+  async function handleSkip() {
+    await skipQuestion(room.id, question.id);
+    await refetchAnswers();
+    await advanceOrFinish();
+  }
+
+  async function handlePrevious() {
+    if (currentIndex === 0) return;
+    const targetQuestion = questions[currentIndex - 1];
+    await goToPreviousQuestion(room.id, [question.id, targetQuestion.id], currentIndex - 1);
+    await refetchAnswers();
   }
 
   if (authLoading) {
@@ -240,14 +261,18 @@ export default function App() {
         players={players}
         qAnswers={qAnswers}
         revealed={revealed}
+        locked={room.locked}
         lastPts={lastPts}
         scores={scores}
         blur={room.blur}
         onRevealBlurStep={() => updateBlur(room.id, Math.max(0, room.blur - 5))}
         soundPlaying={room.sound_playing}
         onToggleSound={() => setSoundPlaying(room.id, !room.sound_playing)}
+        onLockAnswers={() => lockAnswers(room.id)}
         onReveal={() => revealAnswer(room.id)}
+        onSkip={handleSkip}
         onNext={handleNext}
+        onPrevious={handlePrevious}
       />
     );
   } else {
@@ -255,12 +280,17 @@ export default function App() {
     content = (
       <PlayerView
         question={question}
+        questions={questions}
         currentIndex={currentIndex}
         totalQuestions={questions.length}
+        players={players}
+        qAnswers={qAnswers}
         myAnswer={myAnswer}
         revealed={revealed}
+        locked={room.locked}
         myPoints={lastPts[roomSession.playerId] || 0}
         myScore={scores[roomSession.playerId] || 0}
+        lastPts={lastPts}
         blur={room.blur}
         soundPlaying={room.sound_playing}
         textInput={textInput}

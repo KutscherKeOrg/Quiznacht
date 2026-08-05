@@ -117,5 +117,17 @@ export function useRoom(roomId) {
     return map;
   }, [answers]);
 
-  return { room, players, questions, answers, answersByQuestion, loading, error };
+  /**
+   * Erzwingt einen frischen Antworten-Abgleich mit der DB, statt auf das
+   * Eintreffen des Realtime-Events zu warten. Für Moderator-Aktionen, die
+   * mehrere Antworten auf einmal löschen (Skip/Zurück) und bei denen die
+   * eigene Punkteberechnung sofort den korrekten Stand zeigen soll.
+   */
+  async function refetchAnswers() {
+    if (!roomId) return;
+    const { data } = await supabase.from("answers").select("*").eq("room_id", roomId);
+    setAnswers(data || []);
+  }
+
+  return { room, players, questions, answers, answersByQuestion, loading, error, refetchAnswers };
 }

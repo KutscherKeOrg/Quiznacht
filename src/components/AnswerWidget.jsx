@@ -6,6 +6,7 @@ export function AnswerWidget({
   myAnswer,
   youAnswered,
   revealed,
+  locked,
   textInput,
   onTextInputChange,
   onSubmit,
@@ -15,6 +16,10 @@ export function AnswerWidget({
       <div className="flex flex-col items-center gap-3">
         {youAnswered ? (
           <LockedNote value={`${myAnswer} ${question.unit}`} />
+        ) : locked ? (
+          <p className="text-sm font-semibold" style={{ color: C.dim }}>
+            Antwortzeit ist vorbei.
+          </p>
         ) : (
           <div className="flex gap-2 w-full" style={{ maxWidth: 340 }}>
             <input
@@ -44,6 +49,10 @@ export function AnswerWidget({
       <div className="flex flex-col items-center gap-3">
         {youAnswered ? (
           <LockedNote value={myAnswer} />
+        ) : locked ? (
+          <p className="text-sm font-semibold" style={{ color: C.dim }}>
+            Antwortzeit ist vorbei.
+          </p>
         ) : (
           <div className="flex gap-2 w-full" style={{ maxWidth: 340 }}>
             <input
@@ -73,18 +82,19 @@ export function AnswerWidget({
         const chosen = myAnswer === opt;
         const isCorrect = revealed && opt === question.correct_answer;
         const isWrongChoice = revealed && chosen && opt !== question.correct_answer;
+        const disabled = youAnswered || revealed || locked;
         return (
           <button
             key={opt}
             onClick={() => onSubmit(opt)}
-            disabled={youAnswered || revealed}
+            disabled={disabled}
             className="rounded-xl px-4 py-4 font-semibold text-left transition-all focus:outline-none focus:ring-2"
             style={{
               background: isCorrect ? C.mint + "33" : isWrongChoice ? C.pink + "33" : chosen ? C.violet + "44" : C.panelSoft,
               border: `2px solid ${isCorrect ? C.mint : isWrongChoice ? C.pink : chosen ? C.violet : C.line}`,
               color: C.text,
-              opacity: youAnswered && !chosen && !isCorrect ? 0.5 : 1,
-              cursor: youAnswered || revealed ? "default" : "pointer",
+              opacity: disabled && !chosen && !isCorrect ? 0.5 : 1,
+              cursor: disabled ? "default" : "pointer",
             }}
           >
             {opt}
