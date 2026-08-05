@@ -120,12 +120,12 @@ export function isLikelyMediaOrSystemMessage(text) {
 
 /**
  * Filtert Medien-/Systemnachrichten heraus und sortiert nach Länge
- * (kürzere, prägnantere Nachrichten zuerst) – gute Kandidaten für
+ * (längere, aussagekräftigere Nachrichten zuerst) – gute Kandidaten für
  * "Wer hat's geschrieben?"-Fragen.
  */
 export function getCandidates(messages, { minLength = 10, maxLength = 300 } = {}) {
   return messages
     .filter((m) => !isLikelyMediaOrSystemMessage(m.text))
     .filter((m) => m.text.length >= minLength && m.text.length <= maxLength)
-    .sort((a, b) => a.text.length - b.text.length);
+    .sort((a, b) => b.text.length - a.text.length);
 }
