@@ -123,7 +123,7 @@ export function isLikelyMediaOrSystemMessage(text) {
  * (kürzere, prägnantere Nachrichten zuerst) – gute Kandidaten für
  * "Wer hat's geschrieben?"-Fragen.
  */
-export function getCandidates(messages, { minLength = 3, maxLength = 300 } = {}) {
+export function getCandidates(messages, { minLength = 10, maxLength = 300 } = {}) {
   return messages
     .filter((m) => !isLikelyMediaOrSystemMessage(m.text))
     .filter((m) => m.text.length >= minLength && m.text.length <= maxLength)
