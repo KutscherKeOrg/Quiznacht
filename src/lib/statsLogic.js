@@ -70,9 +70,13 @@ export function computeCategoryRanking(answers, players, questions, categoryId) 
   Object.values(groups).forEach((groupAnswers) => {
     const question = questionById[groupAnswers[0].question_id];
     const answersByPlayerId = {};
-    groupAnswers.forEach((a) => (answersByPlayerId[a.player_id] = a.value));
+    const elapsedByPlayerId = {};
+    groupAnswers.forEach((a) => {
+      answersByPlayerId[a.player_id] = a.value;
+      elapsedByPlayerId[a.player_id] = a.elapsed_ms;
+    });
     const playerIds = groupAnswers.map((a) => a.player_id);
-    const pts = pointsForQuestion(question, answersByPlayerId, playerIds);
+    const pts = pointsForQuestion(question, answersByPlayerId, playerIds, elapsedByPlayerId);
     playerIds.forEach((playerId) => {
       const profileId = playerToProfile[playerId];
       if (!profileId) return;

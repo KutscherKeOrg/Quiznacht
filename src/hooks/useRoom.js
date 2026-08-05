@@ -117,6 +117,18 @@ export function useRoom(roomId) {
     return map;
   }, [answers]);
 
+  // Separat von answersByQuestion gehalten (statt die Werte dort zu
+  // Objekten umzubauen), damit alle bestehenden Konsumenten von
+  // answersByQuestion unverändert weiter den rohen Antwort-Text bekommen.
+  const elapsedByQuestion = useMemo(() => {
+    const map = {};
+    answers.forEach((a) => {
+      if (!map[a.question_id]) map[a.question_id] = {};
+      map[a.question_id][a.player_id] = a.elapsed_ms;
+    });
+    return map;
+  }, [answers]);
+
   /**
    * Erzwingt einen frischen Antworten-Abgleich mit der DB, statt auf das
    * Eintreffen des Realtime-Events zu warten. Für Moderator-Aktionen, die
@@ -129,5 +141,5 @@ export function useRoom(roomId) {
     setAnswers(data || []);
   }
 
-  return { room, players, questions, answers, answersByQuestion, loading, error, refetchAnswers };
+  return { room, players, questions, answers, answersByQuestion, elapsedByQuestion, loading, error, refetchAnswers };
 }

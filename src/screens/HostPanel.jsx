@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { AnswerResultsList } from "../components/AnswerResultsList";
 import { Scoreboard } from "../components/Scoreboard";
 import { C } from "../theme/colors";
@@ -28,7 +27,6 @@ export function HostPanel({
   onNext,
   onPrevious,
 }) {
-  const [showStandings, setShowStandings] = useState(false);
   const answeredCount = Object.keys(qAnswers).length;
   const isLast = currentIndex + 1 >= totalQuestions;
 
@@ -122,14 +120,14 @@ export function HostPanel({
           >
             ← Zurück zur vorherigen Frage
           </button>
-          <button
-            onClick={() => setShowStandings(true)}
-            className="rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2"
-            style={{ background: C.panelSoft, color: C.sky, border: `1px solid ${C.sky}55` }}
-          >
-            Zwischenstand einblenden
-          </button>
         </div>
+      </div>
+
+      <div className="rounded-2xl p-5" style={{ background: C.panel, border: `1px solid ${C.line}` }}>
+        <div className="text-xs font-bold tracking-widest mb-4" style={{ color: C.dim }}>
+          ZWISCHENSTAND
+        </div>
+        <Scoreboard players={players} scores={scores} />
       </div>
 
       {revealed && (
@@ -138,34 +136,6 @@ export function HostPanel({
             WER LAG RICHTIG?
           </div>
           <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} />
-        </div>
-      )}
-
-      {showStandings && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
-          style={{ background: "#0B0919CC" }}
-          onClick={() => setShowStandings(false)}
-        >
-          <div
-            className="rounded-2xl p-6 w-full"
-            style={{ maxWidth: 420, background: C.panel, border: `1px solid ${C.line}` }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-5">
-              <div className="text-xs font-bold tracking-widest" style={{ color: C.dim }}>
-                ZWISCHENSTAND
-              </div>
-              <button
-                onClick={() => setShowStandings(false)}
-                className="text-sm font-bold focus:outline-none focus:ring-2"
-                style={{ color: C.dim }}
-              >
-                ✕
-              </button>
-            </div>
-            <Scoreboard players={players} scores={scores} big />
-          </div>
         </div>
       )}
     </div>

@@ -44,7 +44,7 @@ export function AnswerWidget({
     );
   }
 
-  if (question.type === "portrait") {
+  if (question.answer_mode === "open") {
     return (
       <div className="flex flex-col items-center gap-3">
         {youAnswered ? (

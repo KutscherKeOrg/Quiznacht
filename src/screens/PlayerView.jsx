@@ -13,6 +13,8 @@ export function PlayerView({
   locked,
   myPoints,
   myScore,
+  scores,
+  youId,
   lastPts,
   blur,
   soundPlaying,
@@ -41,6 +43,8 @@ export function PlayerView({
         locked={locked}
         myPoints={myPoints}
         myScore={myScore}
+        scores={scores}
+        youId={youId}
         lastPts={lastPts}
         textInput={textInput}
         onTextInputChange={onTextInputChange}

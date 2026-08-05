@@ -37,9 +37,11 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts }) {
     );
   }
 
+  const sorted = [...answered].sort((a, b) => (lastPts[b.id] ?? 0) - (lastPts[a.id] ?? 0));
+
   return (
     <div className="flex flex-col gap-2">
-      {answered.map((p) => {
+      {sorted.map((p) => {
         const correct = isAnswerCorrect(question, qAnswers[p.id]);
         return (
           <div
@@ -50,6 +52,9 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts }) {
             <span style={{ color: C.text }}>{p.name}</span>
             <span className="flex items-center gap-2">
               <span style={{ color: C.dim }}>{qAnswers[p.id]}</span>
+              {correct && (
+                <span style={{ color: C.mint, fontVariantNumeric: "tabular-nums" }}>+{lastPts[p.id] ?? 0}</span>
+              )}
               <span style={{ color: correct ? C.mint : C.pink, fontWeight: 700 }}>{correct ? "✓" : "✗"}</span>
             </span>
           </div>

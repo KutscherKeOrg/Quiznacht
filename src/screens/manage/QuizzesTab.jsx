@@ -224,7 +224,7 @@ export function QuizzesTab({ pool }) {
                     {i + 1}.
                   </span>
                   {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
-                  <span className="flex-1 text-sm truncate" style={{ color: C.text }}>
+                  <span className="flex-1 text-sm truncate" style={{ color: C.text }} title={q.prompt}>
                     {q.prompt}
                   </span>
                   <button
@@ -295,7 +295,7 @@ export function QuizzesTab({ pool }) {
                   style={{ background: C.panelSoft, border: `1px solid ${C.line}` }}
                 >
                   {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
-                  <span className="flex-1 text-sm truncate" style={{ color: C.text }}>
+                  <span className="flex-1 text-sm truncate" style={{ color: C.text }} title={q.prompt}>
                     {q.prompt}
                   </span>
                   <button

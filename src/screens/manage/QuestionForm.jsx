@@ -14,6 +14,9 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
   const isEdit = Boolean(initialQuestion);
   const [categoryId, setCategoryId] = useState(initialQuestion?.category_id ?? categories[0]?.id ?? "");
   const [type, setType] = useState(initialQuestion?.type ?? "multiple_choice");
+  const [answerMode, setAnswerMode] = useState(
+    initialQuestion?.answer_mode ?? (initialQuestion?.type === "portrait" ? "open" : "choice")
+  );
   const [prompt, setPrompt] = useState(initialQuestion?.prompt ?? "");
   const [options, setOptions] = useState(optionsFromQuestion(initialQuestion));
   const [correctAnswer, setCorrectAnswer] = useState(initialQuestion?.correct_answer ?? "");
@@ -25,9 +28,9 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const isPortraitOpen = type === "portrait";
-  const needsOptions = type === "multiple_choice" || type === "chat";
   const isEstimate = type === "schaetzfrage";
+  const isOpenAnswer = !isEstimate && answerMode === "open";
+  const needsOptions = !isEstimate && answerMode === "choice";
   const isChat = type === "chat";
   const isMedia = type === "portrait" || type === "sound";
 
@@ -69,7 +72,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
         return setError("Bitte die richtige Antwort markieren.");
       }
     }
-    if (isPortraitOpen && !correctAnswer.trim()) return setError("Bitte die richtige Antwort eingeben.");
+    if (isOpenAnswer && !correctAnswer.trim()) return setError("Bitte die richtige Antwort eingeben.");
     if (isChat && !message.trim()) return setError("Bitte den Nachrichtentext eingeben.");
     if (isEstimate) {
       if (correctValue === "" || Number.isNaN(Number(correctValue))) return setError("Bitte eine gültige Zahl eingeben.");
@@ -79,9 +82,10 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
     onSave({
       category_id: categoryId,
       type,
+      answer_mode: isEstimate ? "choice" : answerMode,
       prompt: prompt.trim(),
       options: needsOptions ? cleanOptions : null,
-      correct_answer: needsOptions ? correctAnswer : isPortraitOpen ? correctAnswer.trim() : null,
+      correct_answer: needsOptions ? correctAnswer : isOpenAnswer ? correctAnswer.trim() : null,
       correct_value: isEstimate ? Number(correctValue) : null,
       unit: isEstimate ? unit.trim() : null,
       media_url: isMedia ? mediaUrl.trim() || null : null,
@@ -135,6 +139,40 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
           </select>
         </div>
       </div>
+
+      {!isEstimate && (
+        <div className="mb-4">
+          <label className="block text-xs mb-2" style={{ color: C.dim }}>
+            Antwortmodus
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAnswerMode("choice")}
+              className="rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2"
+              style={{
+                background: answerMode === "choice" ? C.violet : C.panelSoft,
+                color: answerMode === "choice" ? "#fff" : C.dim,
+                border: `1px solid ${C.line}`,
+              }}
+            >
+              Auswahl (A–D)
+            </button>
+            <button
+              type="button"
+              onClick={() => setAnswerMode("open")}
+              className="rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2"
+              style={{
+                background: answerMode === "open" ? C.violet : C.panelSoft,
+                color: answerMode === "open" ? "#fff" : C.dim,
+                border: `1px solid ${C.line}`,
+              }}
+            >
+              Offene Eingabe
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="mb-4">
         <label className="block text-xs mb-2" style={{ color: C.dim }}>
@@ -194,7 +232,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
         </div>
       )}
 
-      {isPortraitOpen && (
+      {isOpenAnswer && (
         <div className="mb-4">
           <label className="block text-xs mb-2" style={{ color: C.dim }}>
             Richtige Antwort (frei eingetippt, Groß-/Kleinschreibung egal)

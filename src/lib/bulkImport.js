@@ -234,6 +234,7 @@ export function validateRow(raw, categories) {
       ? {
           category_id: category.id,
           type: typ,
+          answer_mode: isPortraitOpen ? "open" : "choice",
           prompt,
           options: needsOptions ? options : null,
           correct_answer: needsOptions || isPortraitOpen ? correctAnswer : null,

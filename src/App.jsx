@@ -22,6 +22,7 @@ import {
   submitAnswer,
 } from "./lib/roomActions";
 import { Header } from "./components/Header";
+import { BackgroundMusic } from "./components/BackgroundMusic";
 import { AuthScreen } from "./screens/AuthScreen";
 import { StartScreen } from "./screens/StartScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
@@ -35,7 +36,7 @@ import { C } from "./theme/colors";
 export default function App() {
   const { user, profile, loading: authLoading } = useAuth();
   const [roomSession, setRoomSession] = useRoomSession();
-  const { room, players, questions, answersByQuestion, loading, error: roomError, refetchAnswers } = useRoom(
+  const { room, players, questions, answersByQuestion, elapsedByQuestion, loading, error: roomError, refetchAnswers } = useRoom(
     roomSession?.roomId ?? null
   );
 
@@ -146,17 +147,18 @@ export default function App() {
 
   const scores = useMemo(() => {
     if (!room) return {};
-    return computeScores({ questions, answersByQuestion, players, currentIndex, revealed, phase: room.phase });
-  }, [room, questions, answersByQuestion, players, currentIndex, revealed]);
+    return computeScores({ questions, answersByQuestion, elapsedByQuestion, players, currentIndex, revealed, phase: room.phase });
+  }, [room, questions, answersByQuestion, elapsedByQuestion, players, currentIndex, revealed]);
 
   const lastPts = useMemo(() => {
     if (!question || !(revealed || room?.phase === "end")) return {};
     return pointsForQuestion(
       question,
       qAnswers,
-      players.map((p) => p.id)
+      players.map((p) => p.id),
+      elapsedByQuestion[question.id] || {}
     );
-  }, [question, revealed, room?.phase, qAnswers, players]);
+  }, [question, revealed, room?.phase, qAnswers, players, elapsedByQuestion]);
 
   async function advanceOrFinish() {
     const isLast = currentIndex + 1 >= questions.length;
@@ -297,6 +299,8 @@ export default function App() {
         locked={room.locked}
         myPoints={lastPts[roomSession.playerId] || 0}
         myScore={scores[roomSession.playerId] || 0}
+        scores={scores}
+        youId={roomSession.playerId}
         lastPts={lastPts}
         blur={room.blur}
         soundPlaying={room.sound_playing}
@@ -321,6 +325,7 @@ export default function App() {
         />
         {content}
       </div>
+      <BackgroundMusic active={Boolean(roomSession) && room?.phase !== "end"} />
     </div>
   );
 }
