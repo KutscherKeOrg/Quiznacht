@@ -6,7 +6,8 @@ const AREAS = [
   ["stats", "Statistiken"],
 ];
 
-export function Header({ code, onLeave, area, onAreaChange, displayName, onSignOut }) {
+export function Header({ code, onLeave, area, onAreaChange, displayName, onSignOut, isAdmin }) {
+  const visibleAreas = AREAS.filter(([key]) => key !== "manage" || isAdmin);
   return (
     <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
       <div className="flex items-center gap-3">
@@ -41,7 +42,7 @@ export function Header({ code, onLeave, area, onAreaChange, displayName, onSignO
       {onAreaChange && (
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex rounded-xl overflow-hidden" style={{ border: `1px solid ${C.line}` }}>
-            {AREAS.map(([key, label]) => (
+            {visibleAreas.map(([key, label]) => (
               <button
                 key={key}
                 onClick={() => onAreaChange(key)}

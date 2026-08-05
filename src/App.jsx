@@ -138,6 +138,7 @@ export default function App() {
   }
 
   const isHost = roomSession?.role === "host";
+  const isAdmin = profile?.role === "admin";
   const currentIndex = room?.current_question_index ?? 0;
   const question = questions[currentIndex];
   const qAnswers = question ? answersByQuestion[question.id] || {} : {};
@@ -205,7 +206,13 @@ export default function App() {
   let content;
 
   if (!roomSession && area === "manage") {
-    content = <ManageScreen />;
+    content = isAdmin ? (
+      <ManageScreen />
+    ) : (
+      <p className="text-center py-20" style={{ color: C.pink }}>
+        Kein Zugriff – dieser Bereich ist nur für Admins.
+      </p>
+    );
   } else if (!roomSession && area === "stats") {
     content = <StatsScreen />;
   } else if (!roomSession) {
@@ -310,6 +317,7 @@ export default function App() {
           onAreaChange={!roomSession ? setArea : undefined}
           displayName={!roomSession ? profile.display_name : undefined}
           onSignOut={signOut}
+          isAdmin={isAdmin}
         />
         {content}
       </div>
