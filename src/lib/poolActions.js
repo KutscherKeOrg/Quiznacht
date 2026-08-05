@@ -18,6 +18,17 @@ export async function deleteCategory(id) {
   if (error) throw error;
 }
 
+/**
+ * Für Tools wie den WhatsApp-Import, die Fragen fest einer bestimmten
+ * Kategorie zuordnen (z.B. "Chatnachrichten") und diese bei Bedarf
+ * automatisch anlegen sollen, statt den Import daran scheitern zu lassen.
+ */
+export async function getOrCreateCategoryByName(name, color) {
+  const { data: existing } = await supabase.from("categories").select("*").ilike("name", name).maybeSingle();
+  if (existing) return existing;
+  return createCategory(name, color);
+}
+
 /* ---------- Medien-Upload (Portrait-Bilder, Sound-Dateien) ---------- */
 
 export async function uploadQuestionMedia(file, mediaKind) {

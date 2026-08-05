@@ -3,6 +3,7 @@ import { QUESTION_TYPES } from "../../data/questionTypes";
 import { createQuestion, updateQuestion, deleteQuestion } from "../../lib/poolActions";
 import { QuestionForm } from "./QuestionForm";
 import { BulkImportForm } from "./BulkImportForm";
+import { WhatsAppImportForm } from "./WhatsAppImportForm";
 import { C } from "../../theme/colors";
 
 function formatDate(iso) {
@@ -102,6 +103,17 @@ export function QuestionsTab({ pool }) {
     );
   }
 
+  if (mode === "whatsapp") {
+    return (
+      <WhatsAppImportForm
+        onExit={async () => {
+          setMode("list");
+          await refresh();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
@@ -141,6 +153,13 @@ export function QuestionsTab({ pool }) {
           />
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={() => setMode("whatsapp")}
+            className="rounded-xl px-5 py-2 font-bold focus:outline-none focus:ring-2"
+            style={{ background: C.panelSoft, color: C.mint, border: `1px solid ${C.line}` }}
+          >
+            WhatsApp-Import
+          </button>
           <button
             onClick={() => setMode("bulk")}
             disabled={categories.length === 0}
