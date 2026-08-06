@@ -1,9 +1,25 @@
 import { supabase } from "./supabaseClient";
 
+function shuffle(items) {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+async function shuffledQuestionOrder(quizId) {
+  const { data, error } = await supabase.from("quiz_questions").select("question_id").eq("quiz_id", quizId);
+  if (error) throw error;
+  return shuffle((data || []).map((row) => row.question_id));
+}
+
 export async function createRoom(quizId) {
+  const questionOrder = await shuffledQuestionOrder(quizId);
   const { data, error } = await supabase
     .from("rooms")
-    .insert({ quiz_id: quizId })
+    .insert({ quiz_id: quizId, question_order: questionOrder })
     .select()
     .single();
   if (error) throw error;
@@ -158,9 +174,10 @@ async function markQuestionsPlayed(quizId) {
   if (error) throw error;
 }
 
-export async function restartRoom(roomId) {
+export async function restartRoom(roomId, quizId) {
   const { error: deleteError } = await supabase.from("answers").delete().eq("room_id", roomId);
   if (deleteError) throw deleteError;
+  const questionOrder = quizId ? await shuffledQuestionOrder(quizId) : undefined;
   const { error } = await supabase
     .from("rooms")
     .update({
@@ -171,6 +188,7 @@ export async function restartRoom(roomId) {
       blur: 14,
       sound_playing: false,
       question_started_at: null,
+      ...(questionOrder ? { question_order: questionOrder } : {}),
     })
     .eq("id", roomId);
   if (error) throw error;

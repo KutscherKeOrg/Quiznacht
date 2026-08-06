@@ -297,7 +297,7 @@ export default function App() {
         scores={scores}
         youId={roomSession.playerId}
         isHost={isHost}
-        onRestart={() => restartRoom(room.id)}
+        onRestart={() => restartRoom(room.id, room.quiz_id)}
         onShowHistory={() => setShowHistory(true)}
       />
     );
