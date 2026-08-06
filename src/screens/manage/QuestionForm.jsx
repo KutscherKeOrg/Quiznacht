@@ -350,7 +350,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
                 {uploading ? "Lädt hoch…" : "…oder Datei hochladen"}
                 <input
                   type="file"
-                  accept={type === "portrait" ? "image/*" : "audio/*"}
+                  accept={type === "portrait" ? "image/*" : "audio/*,video/mp4,.mp4"}
                   onChange={(e) => handleFileSelected(e.target.files?.[0])}
                   disabled={uploading}
                   className="hidden"
