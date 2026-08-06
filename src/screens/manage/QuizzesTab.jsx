@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
-import { createQuiz, deleteQuiz, addQuestionToQuiz, removeQuestionFromQuiz } from "../../lib/poolActions";
+import { createQuiz, deleteQuiz, addQuestionToQuiz, removeQuestionFromQuiz, updateQuestion } from "../../lib/poolActions";
 import { QuestionDetails } from "./QuestionDetails";
+import { QuestionForm } from "./QuestionForm";
 import { C } from "../../theme/colors";
 
 export function QuizzesTab({ pool }) {
@@ -16,6 +17,7 @@ export function QuizzesTab({ pool }) {
   const [typeFilter, setTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [expandedIds, setExpandedIds] = useState(new Set());
+  const [editingQuestion, setEditingQuestion] = useState(null);
 
   const selectedQuiz = quizzes.find((q) => q.id === selectedQuizId) ?? null;
 
@@ -119,6 +121,20 @@ export function QuizzesTab({ pool }) {
     }
   }
 
+  async function handleSaveEdit(fields) {
+    setBusy(true);
+    setError("");
+    try {
+      await updateQuestion(editingQuestion.id, fields);
+      setEditingQuestion(null);
+      await refresh();
+    } catch (err) {
+      setError("Konnte nicht gespeichert werden: " + err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!selectedQuiz) {
     return (
       <div className="max-w-2xl mx-auto">
@@ -184,6 +200,25 @@ export function QuizzesTab({ pool }) {
             </div>
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (editingQuestion) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <QuestionForm
+          categories={categories}
+          initialQuestion={editingQuestion}
+          onSave={handleSaveEdit}
+          onCancel={() => setEditingQuestion(null)}
+          busy={busy}
+        />
+        {error && (
+          <p className="text-sm mt-3 text-center" style={{ color: C.pink }}>
+            {error}
+          </p>
+        )}
       </div>
     );
   }
@@ -256,6 +291,14 @@ export function QuizzesTab({ pool }) {
                     >
                       {q.prompt}
                     </span>
+                    <button
+                      onClick={() => setEditingQuestion(q)}
+                      disabled={busy}
+                      className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
+                      style={{ color: C.dim }}
+                    >
+                      Bearbeiten
+                    </button>
                     <button
                       onClick={() => handleRemove(q.id)}
                       disabled={busy}
@@ -347,6 +390,14 @@ export function QuizzesTab({ pool }) {
                     >
                       {q.prompt}
                     </span>
+                    <button
+                      onClick={() => setEditingQuestion(q)}
+                      disabled={busy}
+                      className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
+                      style={{ color: C.dim }}
+                    >
+                      Bearbeiten
+                    </button>
                     <button
                       onClick={() => handleAdd(q.id)}
                       disabled={busy}

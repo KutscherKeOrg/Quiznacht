@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 
 /**
@@ -11,9 +11,15 @@ export function usePool() {
   const [questions, setQuestions] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    // Nur beim allerersten Laden den ganzen Verwaltungsbereich durch "Lade…"
+    // ersetzen. Spätere Refreshes (z.B. nach dem Speichern einer Frage)
+    // sollen die Daten still im Hintergrund austauschen, sonst würde
+    // ManageScreen die Tabs kurz unmounten und lokalen UI-Zustand wie eine
+    // offene Quiz-Zusammenstellung verlieren.
+    if (!hasLoadedOnce.current) setLoading(true);
     const [categoriesRes, questionsRes, quizzesRes] = await Promise.all([
       supabase.from("categories").select("*").order("name"),
       supabase.from("questions").select("*").order("created_at", { ascending: false }),
@@ -23,6 +29,7 @@ export function usePool() {
     setQuestions(questionsRes.data || []);
     setQuizzes(quizzesRes.data || []);
     setLoading(false);
+    hasLoadedOnce.current = true;
   }, []);
 
   useEffect(() => {
