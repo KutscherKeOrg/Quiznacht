@@ -23,7 +23,6 @@ import {
   setAnswerOverride,
 } from "./lib/roomActions";
 import { Header } from "./components/Header";
-import { BackgroundMusic } from "./components/BackgroundMusic";
 import { AuthScreen } from "./screens/AuthScreen";
 import { StartScreen } from "./screens/StartScreen";
 import { LobbyScreen } from "./screens/LobbyScreen";
@@ -376,7 +375,6 @@ export default function App() {
         />
         {content}
       </div>
-      <BackgroundMusic active={Boolean(roomSession) && room?.phase !== "end"} />
     </div>
   );
 }
