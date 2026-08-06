@@ -245,6 +245,7 @@ export function WhatsAppImportForm({ onExit }) {
                   <input
                     value={formPrompt}
                     onChange={(e) => setFormPrompt(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveCandidate()}
                     className="w-full rounded-xl px-4 py-3 mb-3 focus:outline-none focus:ring-2"
                     style={inputStyle}
                   />

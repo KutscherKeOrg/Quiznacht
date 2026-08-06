@@ -5,10 +5,11 @@ import { C } from "../theme/colors";
 
 /**
  * Linke Spalte der Frage-Ansicht – rollenunabhängig. Zeigt Frage, Medium und
- * Fortschritt exakt gleich für Host und alle Mitspieler, gesteuert allein
- * über den synchronisierten Raumstatus (revealed/blur/soundPlaying).
+ * Fortschritt exakt gleich für Host und alle Mitspieler, gesteuert über den
+ * synchronisierten Raumstatus (revealed/blur); Sound-Wiedergabe ist eine
+ * lokale Kontrolle direkt im SoundPlayer, nicht Teil des Raumstatus.
  */
-export function QuestionStage({ question, questions, currentIndex, revealed, blur, soundPlaying }) {
+export function QuestionStage({ question, questions, currentIndex, revealed, blur }) {
   return (
     <div className="flex-1 rounded-2xl p-6" style={{ background: C.panel, border: `1px solid ${C.line}` }}>
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -18,7 +19,7 @@ export function QuestionStage({ question, questions, currentIndex, revealed, blu
       <h2 className="mt-5 mb-6 text-center" style={{ fontSize: 26, fontWeight: 700, color: C.text, lineHeight: 1.3 }}>
         {question.prompt}
       </h2>
-      <QuestionMedia question={question} revealed={revealed} blur={blur} soundPlaying={soundPlaying} />
+      <QuestionMedia question={question} revealed={revealed} blur={blur} />
 
       {revealed && (
         <div className="mt-6 text-center rounded-xl py-4" style={{ background: C.mint + "18", border: `1px solid ${C.mint}55` }}>

@@ -181,11 +181,6 @@ export async function updateBlur(roomId, blur) {
   if (error) throw error;
 }
 
-export async function setSoundPlaying(roomId, playing) {
-  const { error } = await supabase.from("rooms").update({ sound_playing: playing }).eq("id", roomId);
-  if (error) throw error;
-}
-
 export async function submitAnswer(roomId, questionId, playerId, value, elapsedMs) {
   const { error } = await supabase
     .from("answers")

@@ -20,9 +20,7 @@ export function HostPanel({
   overrides,
   scores,
   blur,
-  soundPlaying,
   onSetBlur,
-  onToggleSound,
   onLockAnswers,
   onReveal,
   onSkip,
@@ -62,15 +60,6 @@ export function HostPanel({
               ))}
             </div>
           </div>
-        )}
-        {question.type === "sound" && (
-          <button
-            onClick={onToggleSound}
-            className="w-full rounded-lg px-4 py-2 mb-3 text-sm font-semibold focus:outline-none focus:ring-2"
-            style={{ background: C.pink + "33", color: C.pink, border: `1px solid ${C.pink}66` }}
-          >
-            {soundPlaying ? "Sound pausieren" : "Sound abspielen"}
-          </button>
         )}
 
         <div className="text-sm mb-4" style={{ color: C.dim }}>

@@ -18,7 +18,6 @@ import {
   finishRoom,
   restartRoom,
   updateBlur,
-  setSoundPlaying,
   submitAnswer,
   setAnswerOverride,
 } from "./lib/roomActions";
@@ -323,8 +322,6 @@ export default function App() {
         scores={scores}
         blur={room.blur}
         onSetBlur={(value) => updateBlur(room.id, value)}
-        soundPlaying={room.sound_playing}
-        onToggleSound={() => setSoundPlaying(room.id, !room.sound_playing)}
         onLockAnswers={() => lockAnswers(room.id)}
         onReveal={() => revealAnswer(room.id)}
         onSkip={handleSkip}
@@ -353,7 +350,6 @@ export default function App() {
         lastPts={lastPts}
         overrides={overridesByQuestion[question.id] || {}}
         blur={room.blur}
-        soundPlaying={room.sound_playing}
         textInput={textInput}
         onTextInputChange={setTextInput}
         onSubmit={handleSubmitAnswer}

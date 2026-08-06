@@ -14,8 +14,6 @@ export function HostView({
   scores,
   blur,
   onSetBlur,
-  soundPlaying,
-  onToggleSound,
   onLockAnswers,
   onReveal,
   onSkip,
@@ -31,7 +29,6 @@ export function HostView({
         currentIndex={currentIndex}
         revealed={revealed}
         blur={blur}
-        soundPlaying={soundPlaying}
       />
       <HostPanel
         question={question}
@@ -45,9 +42,7 @@ export function HostView({
         overrides={overrides}
         scores={scores}
         blur={blur}
-        soundPlaying={soundPlaying}
         onSetBlur={onSetBlur}
-        onToggleSound={onToggleSound}
         onLockAnswers={onLockAnswers}
         onReveal={onReveal}
         onSkip={onSkip}

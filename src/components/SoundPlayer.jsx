@@ -10,15 +10,21 @@ function readStoredVolume() {
 }
 
 /**
- * Abspielen/Pausieren wird ausschließlich über den `playing`-Prop
- * (Realtime-Raumstatus) gesteuert, damit Host und Mitspieler denselben
- * Anblick haben. Die Lautstärke ist dagegen eine rein lokale Einstellung
- * je Person – wirkt sich nur auf die eigene Wiedergabe aus, nicht auf
- * andere, und bleibt über localStorage über Fragen/Sitzungen hinweg erhalten.
+ * Abspielen/Pausieren/Stoppen und Lautstärke sind rein lokale Einstellungen
+ * je Person – jede:r startet/pausiert/stoppt für sich selbst, wirkt sich
+ * nur auf die eigene Wiedergabe aus. Host und Mitspieler:innen sehen
+ * denselben Player mit denselben Kontrollen. Die Lautstärke bleibt über
+ * localStorage über Fragen/Sitzungen hinweg erhalten; der Abspielstatus
+ * wird bei jedem Fragenwechsel zurückgesetzt.
  */
-export function SoundPlayer({ playing, mediaUrl }) {
+export function SoundPlayer({ mediaUrl }) {
   const audioRef = useRef(null);
+  const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(readStoredVolume);
+
+  useEffect(() => {
+    setPlaying(false);
+  }, [mediaUrl]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -40,20 +46,41 @@ export function SoundPlayer({ playing, mediaUrl }) {
     localStorage.setItem(VOLUME_STORAGE_KEY, String(next));
   }
 
+  function togglePlay() {
+    setPlaying((p) => !p);
+  }
+
+  function handleStop() {
+    setPlaying(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  }
+
   return (
     <div
       className="rounded-2xl p-5 flex flex-col gap-4 mx-auto"
       style={{ background: C.panelSoft, border: `1px solid ${C.line}`, maxWidth: 380 }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {mediaUrl && <audio ref={audioRef} src={mediaUrl} loop />}
-        <div
-          className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+        <button
+          onClick={togglePlay}
+          className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold shrink-0 focus:outline-none focus:ring-2"
           style={{ background: C.pink, color: "#fff" }}
-          aria-hidden="true"
+          aria-label={playing ? "Pausieren" : "Abspielen"}
         >
           {playing ? "❚❚" : "▶"}
-        </div>
+        </button>
+        <button
+          onClick={handleStop}
+          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 focus:outline-none focus:ring-2"
+          style={{ background: C.panel, border: `1px solid ${C.line}`, color: C.dim }}
+          aria-label="Stoppen"
+        >
+          ■
+        </button>
         <div className="flex items-end gap-1 h-10 flex-1" aria-hidden="true">
           {Array.from({ length: 24 }).map((_, i) => (
             <span
