@@ -1,3 +1,4 @@
+import { PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
 import { C } from "../../theme/colors";
 
 /**
@@ -14,6 +15,16 @@ export function QuestionDetails({ question }) {
       <p className="mb-3" style={{ color: C.text }}>
         {question.prompt}
       </p>
+
+      {question.type === "portrait" && (
+        <p className="mb-2" style={{ color: C.dim }}>
+          Anzeigemodus:{" "}
+          <span style={{ color: C.text, fontWeight: 600 }}>
+            {PORTRAIT_DISPLAY_MODES[question.portrait_display_mode ?? "blur"].icon}{" "}
+            {PORTRAIT_DISPLAY_MODES[question.portrait_display_mode ?? "blur"].label}
+          </span>
+        </p>
+      )}
 
       {question.type === "schaetzfrage" && (
         <p style={{ color: C.dim }}>

@@ -323,7 +323,7 @@ export default function App() {
         overrides={overridesByQuestion[question.id] || {}}
         scores={scores}
         blur={room.blur}
-        onRevealBlurStep={() => updateBlur(room.id, Math.max(0, room.blur - 5))}
+        onSetBlur={(value) => updateBlur(room.id, value)}
         soundPlaying={room.sound_playing}
         onToggleSound={() => setSoundPlaying(room.id, !room.sound_playing)}
         onLockAnswers={() => lockAnswers(room.id)}

@@ -10,9 +10,10 @@ import { C } from "../theme/colors";
  */
 export function QuestionMedia({ question, revealed, blur, soundPlaying }) {
   if (question.type === "portrait") {
+    const effectiveBlur = question.portrait_display_mode === "sharp" ? 0 : revealed ? 0 : blur;
     return (
       <div className="flex flex-col items-center gap-3">
-        <PortraitImage blur={revealed ? 0 : blur} mediaUrl={question.media_url} />
+        <PortraitImage blur={effectiveBlur} mediaUrl={question.media_url} />
         <p className="text-xs" style={{ color: C.dim }}>
           {question.note}
         </p>

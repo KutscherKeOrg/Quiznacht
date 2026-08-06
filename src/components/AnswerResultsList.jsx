@@ -1,4 +1,4 @@
-import { effectiveCorrectness } from "../lib/quizLogic";
+import { effectiveCorrectness, isTolerantMatch } from "../lib/quizLogic";
 import { C } from "../theme/colors";
 
 /**
@@ -6,9 +6,10 @@ import { C } from "../theme/colors";
  * als auch im PlayerPanel verwendet. Schätzfragen haben kein binäres
  * richtig/falsch, daher hier stattdessen nach Nähe sortiert. Berücksichtigt
  * nachträgliche Host-Korrekturen (overrides), damit auch Mitspieler:innen
- * sehen, wenn eine Antwort manuell umgewertet wurde.
+ * sehen, wenn eine Antwort manuell umgewertet wurde. `showToleranceBadge`
+ * ist host-only gedacht (im PlayerPanel weggelassen).
  */
-export function AnswerResultsList({ question, players, qAnswers, lastPts, overrides = {} }) {
+export function AnswerResultsList({ question, players, qAnswers, lastPts, overrides = {}, showToleranceBadge = false }) {
   const answered = players.filter((p) => qAnswers[p.id] !== undefined);
 
   if (answered.length === 0) {
@@ -47,6 +48,7 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts, overri
         const override = overrides[p.id];
         const isCorrected = override === true || override === false;
         const correct = effectiveCorrectness(question, qAnswers[p.id], override);
+        const isTolerant = !isCorrected && isTolerantMatch(question, qAnswers[p.id]);
         return (
           <div
             key={p.id}
@@ -63,6 +65,11 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts, overri
             </span>
             <span className="flex items-center gap-2">
               <span style={{ color: C.dim }}>{qAnswers[p.id]}</span>
+              {showToleranceBadge && isTolerant && (
+                <span title="Nur durch toleranten Textabgleich als richtig gewertet" style={{ color: C.sky }}>
+                  ≈
+                </span>
+              )}
               {correct && (
                 <span style={{ color: C.mint, fontVariantNumeric: "tabular-nums" }}>+{lastPts[p.id] ?? 0}</span>
               )}

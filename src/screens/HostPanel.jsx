@@ -1,5 +1,6 @@
 import { AnswerResultsList } from "../components/AnswerResultsList";
 import { Scoreboard } from "../components/Scoreboard";
+import { BLUR_STAGES } from "../data/questionTypes";
 import { C } from "../theme/colors";
 
 /**
@@ -20,7 +21,7 @@ export function HostPanel({
   scores,
   blur,
   soundPlaying,
-  onRevealBlurStep,
+  onSetBlur,
   onToggleSound,
   onLockAnswers,
   onReveal,
@@ -39,14 +40,28 @@ export function HostPanel({
           MODERATION
         </div>
 
-        {question.type === "portrait" && !revealed && (
-          <button
-            onClick={onRevealBlurStep}
-            className="w-full rounded-lg px-4 py-2 mb-3 text-sm font-semibold focus:outline-none focus:ring-2"
-            style={{ background: C.violet + "33", color: C.violet, border: `1px solid ${C.violet}66` }}
-          >
-            Stufe aufdecken ({Math.max(0, Math.ceil(blur / 5))} übrig)
-          </button>
+        {question.type === "portrait" && question.portrait_display_mode !== "sharp" && !revealed && (
+          <div className="mb-3">
+            <div className="text-xs mb-2" style={{ color: C.dim }}>
+              Verpixelung
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {BLUR_STAGES.map((stage) => (
+                <button
+                  key={stage.value}
+                  onClick={() => onSetBlur(stage.value)}
+                  className="rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2"
+                  style={{
+                    background: blur === stage.value ? C.violet : C.panelSoft,
+                    color: blur === stage.value ? "#fff" : C.dim,
+                    border: `1px solid ${blur === stage.value ? C.violet : C.line}`,
+                  }}
+                >
+                  {stage.label}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {question.type === "sound" && (
           <button
@@ -144,7 +159,14 @@ export function HostPanel({
           <div className="text-xs font-bold tracking-widest mb-4" style={{ color: C.dim }}>
             WER LAG RICHTIG?
           </div>
-          <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} overrides={overrides} />
+          <AnswerResultsList
+            question={question}
+            players={players}
+            qAnswers={qAnswers}
+            lastPts={lastPts}
+            overrides={overrides}
+            showToleranceBadge
+          />
         </div>
       )}
     </div>

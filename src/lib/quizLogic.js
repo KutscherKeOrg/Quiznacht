@@ -12,18 +12,58 @@ function normalizeText(value) {
     .replace(/\s+/g, " ");
 }
 
-/**
- * Ob eine abgegebene Antwort für Fragetypen mit binärer richtig/falsch-Wertung
- * (alle außer Schätzfrage) korrekt ist. Im offenen Antwortmodus wird
- * normalisiert verglichen (Groß-/Kleinschreibung, überflüssige Leerzeichen),
- * im Auswahlmodus exakt.
- */
-export function isAnswerCorrect(question, value) {
+const TOLERANT_MIN_LENGTH = 3;
+
+// Entfernt Klammerzusätze wie "(Pokémon Diamond/Pearl)" vor dem toleranten
+// Vergleich, damit Zusatzinfos in der hinterlegten Antwort nicht im Weg stehen.
+function stripParenthetical(text) {
+  return text.replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// Eingabe zählt als toleranter Treffer, wenn sie (normalisiert, ohne
+// Klammerzusätze) als zusammenhängender Abschnitt in der richtigen Antwort
+// vorkommt oder umgekehrt - ab einer Mindestlänge, damit nicht schon ein
+// einzelner Buchstabe fälschlich zählt.
+function isTolerantTextMatch(correctAnswer, value) {
+  const input = normalizeText(value);
+  if (input.length < TOLERANT_MIN_LENGTH) return false;
+  const correctStripped = normalizeText(stripParenthetical(String(correctAnswer ?? "")));
+  if (!correctStripped) return false;
+  return correctStripped.includes(input) || input.includes(correctStripped);
+}
+
+function isExactMatch(question, value) {
   if (value === undefined) return false;
   if (question.answer_mode === "open") {
     return normalizeText(value) === normalizeText(question.correct_answer);
   }
   return value === question.correct_answer;
+}
+
+/**
+ * Ob eine abgegebene Antwort für Fragetypen mit binärer richtig/falsch-Wertung
+ * (alle außer Schätzfrage) korrekt ist. Im offenen Antwortmodus zählt neben
+ * dem exakten (normalisierten) Treffer auch der tolerante Teilstring-Abgleich
+ * (siehe isTolerantTextMatch), im Auswahlmodus nur der exakte Treffer.
+ */
+export function isAnswerCorrect(question, value) {
+  if (value === undefined) return false;
+  if (question.answer_mode === "open") {
+    return isExactMatch(question, value) || isTolerantTextMatch(question.correct_answer, value);
+  }
+  return value === question.correct_answer;
+}
+
+/**
+ * True nur, wenn eine offene Antwort ausschließlich über den toleranten
+ * Abgleich als richtig gilt (nicht exakt) - rein für die Host-Anzeige, damit
+ * er das im Zweifel per Korrekturfunktion übersteuern kann. Fließt selbst
+ * nicht in die Wertung ein, die läuft weiter über isAnswerCorrect.
+ */
+export function isTolerantMatch(question, value) {
+  if (question.answer_mode !== "open" || value === undefined) return false;
+  if (isExactMatch(question, value)) return false;
+  return isTolerantTextMatch(question.correct_answer, value);
 }
 
 /**

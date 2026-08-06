@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { QUESTION_TYPES } from "../../data/questionTypes";
+import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
 import { createQuestion, updateQuestion, deleteQuestion, bulkDeleteQuestions, bulkAssignCategory } from "../../lib/poolActions";
 import { QuestionForm } from "./QuestionForm";
 import { QuestionDetails } from "./QuestionDetails";
@@ -347,6 +347,16 @@ export function QuestionsTab({ pool }) {
                 >
                   {typeMeta.label}
                 </span>
+                {q.type === "portrait" && (
+                  <span
+                    className="text-xs rounded-full px-2 py-1 shrink-0"
+                    title={PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label}
+                    style={{ background: C.panelSoft, color: C.dim, border: `1px solid ${C.line}` }}
+                  >
+                    {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].icon}{" "}
+                    {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label}
+                  </span>
+                )}
                 {cat && (
                   <span className="text-xs font-semibold rounded-full px-2 py-1 shrink-0" style={{ background: cat.color + "22", color: cat.color }}>
                     {cat.name}

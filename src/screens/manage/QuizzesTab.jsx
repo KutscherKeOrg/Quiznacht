@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { QUESTION_TYPES } from "../../data/questionTypes";
+import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
 import { createQuiz, deleteQuiz, addQuestionToQuiz, removeQuestionFromQuiz } from "../../lib/poolActions";
 import { QuestionDetails } from "./QuestionDetails";
 import { C } from "../../theme/colors";
@@ -244,6 +244,11 @@ export function QuizzesTab({ pool }) {
                       {isExpanded ? "▾" : "▸"}
                     </button>
                     {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
+                    {q.type === "portrait" && (
+                      <span title={PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label} className="shrink-0">
+                        {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].icon}
+                      </span>
+                    )}
                     <span
                       className="flex-1 text-sm truncate cursor-pointer"
                       onClick={() => toggleExpanded(q.id)}
@@ -330,6 +335,11 @@ export function QuizzesTab({ pool }) {
                       {isExpanded ? "▾" : "▸"}
                     </button>
                     {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
+                    {q.type === "portrait" && (
+                      <span title={PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label} className="shrink-0">
+                        {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].icon}
+                      </span>
+                    )}
                     <span
                       className="flex-1 text-sm truncate cursor-pointer"
                       onClick={() => toggleExpanded(q.id)}

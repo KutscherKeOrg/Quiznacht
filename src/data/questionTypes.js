@@ -9,3 +9,18 @@ export const QUESTION_TYPES = {
   sound: { label: "Sound zuordnen", color: C.pink },
   chat: { label: "Wer hat's geschrieben?", color: C.mint },
 };
+
+// Anzeigemodus bei Portrait-Fragen: 'blur' (Standard) deckt das Bild beim
+// Spielen stufenweise auf, 'sharp' zeigt es sofort unverpixelt.
+export const PORTRAIT_DISPLAY_MODES = {
+  blur: { label: "Verpixelt", icon: "🔒" },
+  sharp: { label: "Direkt scharf", icon: "👁" },
+};
+
+// Die vier festen Aufdeck-Stufen im Moderator-Panel für 'blur'-Portraits.
+export const BLUR_STAGES = [
+  { value: 14, label: "Stark verpixelt" },
+  { value: 9, label: "Mittel verpixelt" },
+  { value: 4, label: "Leicht verpixelt" },
+  { value: 0, label: "Scharf" },
+];

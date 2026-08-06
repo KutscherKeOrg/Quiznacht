@@ -1,4 +1,4 @@
-import { effectiveCorrectness } from "../lib/quizLogic";
+import { effectiveCorrectness, isTolerantMatch } from "../lib/quizLogic";
 import { C } from "../theme/colors";
 
 /**
@@ -46,6 +46,7 @@ export function AnswerCorrectionList({ question, players, qAnswers, lastPts, ove
         const override = overrides[p.id];
         const isCorrected = override === true || override === false;
         const correct = effectiveCorrectness(question, qAnswers[p.id], override);
+        const isTolerant = !isCorrected && isTolerantMatch(question, qAnswers[p.id]);
         return (
           <div
             key={p.id}
@@ -62,6 +63,11 @@ export function AnswerCorrectionList({ question, players, qAnswers, lastPts, ove
             </span>
             <span className="flex items-center gap-2 flex-wrap">
               <span style={{ color: C.dim }}>{qAnswers[p.id]}</span>
+              {isTolerant && (
+                <span title="Nur durch toleranten Textabgleich als richtig gewertet" style={{ color: C.sky }}>
+                  ≈
+                </span>
+              )}
               {correct && (
                 <span style={{ color: C.mint, fontVariantNumeric: "tabular-nums" }}>+{lastPts[p.id] ?? 0}</span>
               )}

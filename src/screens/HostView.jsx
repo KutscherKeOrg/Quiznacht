@@ -13,7 +13,7 @@ export function HostView({
   overrides,
   scores,
   blur,
-  onRevealBlurStep,
+  onSetBlur,
   soundPlaying,
   onToggleSound,
   onLockAnswers,
@@ -46,7 +46,7 @@ export function HostView({
         scores={scores}
         blur={blur}
         soundPlaying={soundPlaying}
-        onRevealBlurStep={onRevealBlurStep}
+        onSetBlur={onSetBlur}
         onToggleSound={onToggleSound}
         onLockAnswers={onLockAnswers}
         onReveal={onReveal}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { QUESTION_TYPES } from "../../data/questionTypes";
+import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
 import { uploadQuestionMedia } from "../../lib/poolActions";
 import { C } from "../../theme/colors";
 
@@ -17,6 +17,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
   const [answerMode, setAnswerMode] = useState(
     initialQuestion?.answer_mode ?? (initialQuestion?.type === "portrait" ? "open" : "choice")
   );
+  const [portraitDisplayMode, setPortraitDisplayMode] = useState(initialQuestion?.portrait_display_mode ?? "blur");
   const [prompt, setPrompt] = useState(initialQuestion?.prompt ?? "");
   const [options, setOptions] = useState(optionsFromQuestion(initialQuestion));
   const [correctAnswer, setCorrectAnswer] = useState(initialQuestion?.correct_answer ?? "");
@@ -33,6 +34,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
   const needsOptions = !isEstimate && answerMode === "choice";
   const isChat = type === "chat";
   const isMedia = type === "portrait" || type === "sound";
+  const isPortrait = type === "portrait";
 
   function updateOption(i, value) {
     setOptions((prev) => prev.map((o, idx) => (idx === i ? value : o)));
@@ -83,6 +85,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
       category_id: categoryId,
       type,
       answer_mode: isEstimate ? "choice" : answerMode,
+      portrait_display_mode: isPortrait ? portraitDisplayMode : "blur",
       prompt: prompt.trim(),
       options: needsOptions ? cleanOptions : null,
       correct_answer: needsOptions ? correctAnswer : isOpenAnswer ? correctAnswer.trim() : null,
@@ -170,6 +173,31 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
             >
               Offene Eingabe
             </button>
+          </div>
+        </div>
+      )}
+
+      {isPortrait && (
+        <div className="mb-4">
+          <label className="block text-xs mb-2" style={{ color: C.dim }}>
+            Anzeigemodus
+          </label>
+          <div className="flex gap-2">
+            {Object.entries(PORTRAIT_DISPLAY_MODES).map(([key, meta]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setPortraitDisplayMode(key)}
+                className="rounded-xl px-4 py-2 text-sm font-semibold focus:outline-none focus:ring-2"
+                style={{
+                  background: portraitDisplayMode === key ? C.violet : C.panelSoft,
+                  color: portraitDisplayMode === key ? "#fff" : C.dim,
+                  border: `1px solid ${C.line}`,
+                }}
+              >
+                {meta.icon} {key === "blur" ? "Mit Verpixelung" : meta.label}
+              </button>
+            ))}
           </div>
         </div>
       )}
