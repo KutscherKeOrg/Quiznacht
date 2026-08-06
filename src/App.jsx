@@ -60,15 +60,16 @@ export default function App() {
   // Anlegen neuer Quizze im Verwaltungsbereich, oder sobald der Login
   // abgeschlossen ist).
   useEffect(() => {
-    if (!user || roomSession || area !== "play") return;
+    if (!user || !profile || roomSession || area !== "play") return;
     supabase
       .from("quizzes")
       .select("*")
       .order("created_at")
+      .or(`visibility.eq.public,owner_id.eq.${profile.id}`)
       .then(({ data, error }) => {
         if (!error) setQuizzes(data || []);
       });
-  }, [user, roomSession, area]);
+  }, [user, profile, roomSession, area]);
 
   // Lokale Eingaben zurücksetzen, sobald eine neue Frage dran ist.
   useEffect(() => {
@@ -239,7 +240,7 @@ export default function App() {
 
   if (!roomSession && area === "manage") {
     content = isAdmin ? (
-      <ManageScreen />
+      <ManageScreen profile={profile} />
     ) : (
       <p className="text-center py-20" style={{ color: C.pink }}>
         Kein Zugriff – dieser Bereich ist nur für Admins.

@@ -79,8 +79,12 @@ export async function bulkAssignCategory(ids, categoryId) {
 
 /* ---------- Quizze & Quiz-Zusammenstellung ---------- */
 
-export async function createQuiz(title) {
-  const { data, error } = await supabase.from("quizzes").insert({ title }).select().single();
+export async function createQuiz(title, ownerId, visibility = "public") {
+  const { data, error } = await supabase
+    .from("quizzes")
+    .insert({ title, owner_id: ownerId, visibility })
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
@@ -92,6 +96,15 @@ export async function renameQuiz(id, title) {
 
 export async function deleteQuiz(id) {
   const { error } = await supabase.from("quizzes").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/**
+ * Gibt ein privates Quiz unwiderruflich für alle frei. Es gibt keinen Weg
+ * zurück zu "privat" – das hält die Sichtbarkeits-Logik einfach.
+ */
+export async function makeQuizPublic(id) {
+  const { error } = await supabase.from("quizzes").update({ visibility: "public" }).eq("id", id);
   if (error) throw error;
 }
 

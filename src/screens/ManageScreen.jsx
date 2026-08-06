@@ -11,9 +11,9 @@ const TABS = [
   ["quizzes", "Quizze"],
 ];
 
-export function ManageScreen() {
+export function ManageScreen({ profile }) {
   const [tab, setTab] = useState("questions");
-  const pool = usePool();
+  const pool = usePool(profile.id);
 
   return (
     <div className="py-6">
@@ -42,7 +42,7 @@ export function ManageScreen() {
         <>
           {tab === "categories" && <CategoriesTab pool={pool} />}
           {tab === "questions" && <QuestionsTab pool={pool} />}
-          {tab === "quizzes" && <QuizzesTab pool={pool} />}
+          {tab === "quizzes" && <QuizzesTab pool={pool} ownerId={profile.id} />}
         </>
       )}
     </div>

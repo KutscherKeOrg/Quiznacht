@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
-import { createQuiz, deleteQuiz, addQuestionToQuiz, removeQuestionFromQuiz, updateQuestion } from "../../lib/poolActions";
+import {
+  createQuiz,
+  deleteQuiz,
+  addQuestionToQuiz,
+  removeQuestionFromQuiz,
+  updateQuestion,
+  makeQuizPublic,
+} from "../../lib/poolActions";
 import { QuestionDetails } from "./QuestionDetails";
 import { QuestionForm } from "./QuestionForm";
 import { C } from "../../theme/colors";
 
-export function QuizzesTab({ pool }) {
+export function QuizzesTab({ pool, ownerId }) {
   const { categories, questions, quizzes, refresh } = pool;
   const [newTitle, setNewTitle] = useState("");
+  const [newVisibility, setNewVisibility] = useState("public");
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   const [quizQuestionIds, setQuizQuestionIds] = useState([]);
   const [busy, setBusy] = useState(false);
@@ -69,12 +77,27 @@ export function QuizzesTab({ pool }) {
     setBusy(true);
     setError("");
     try {
-      const quiz = await createQuiz(newTitle.trim());
+      const quiz = await createQuiz(newTitle.trim(), ownerId, newVisibility);
       setNewTitle("");
+      setNewVisibility("public");
       await refresh();
       setSelectedQuizId(quiz.id);
     } catch (err) {
       setError("Konnte nicht angelegt werden: " + err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleMakePublic(id) {
+    if (!confirm("Dieses Quiz unwiderruflich für alle Admins öffentlich machen?")) return;
+    setBusy(true);
+    setError("");
+    try {
+      await makeQuizPublic(id);
+      await refresh();
+    } catch (err) {
+      setError("Konnte nicht veröffentlicht werden: " + err.message);
     } finally {
       setBusy(false);
     }
@@ -142,7 +165,7 @@ export function QuizzesTab({ pool }) {
           <h2 className="font-bold text-lg mb-4" style={{ color: C.text }}>
             Neues Quiz
           </h2>
-          <div className="flex gap-3">
+          <div className="flex gap-3 mb-3">
             <input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
@@ -158,6 +181,32 @@ export function QuizzesTab({ pool }) {
               style={{ background: C.gold, color: "#221D00" }}
             >
               Anlegen
+            </button>
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setNewVisibility("public")}
+              className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                background: newVisibility === "public" ? C.violet : C.panelSoft,
+                color: newVisibility === "public" ? "#fff" : C.dim,
+                border: `1px solid ${newVisibility === "public" ? C.violet : C.line}`,
+              }}
+            >
+              Öffentlich
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewVisibility("private")}
+              className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+              style={{
+                background: newVisibility === "private" ? C.violet : C.panelSoft,
+                color: newVisibility === "private" ? "#fff" : C.dim,
+                border: `1px solid ${newVisibility === "private" ? C.violet : C.line}`,
+              }}
+            >
+              Privat – nur für mich sichtbar
             </button>
           </div>
         </div>
@@ -183,6 +232,24 @@ export function QuizzesTab({ pool }) {
               <span className="flex-1 font-semibold" style={{ color: C.text }}>
                 {q.title}
               </span>
+              {q.visibility === "private" && (
+                <span
+                  className="text-xs font-semibold rounded-full px-2 py-1 shrink-0"
+                  style={{ background: C.dim + "22", color: C.dim }}
+                >
+                  🔒 Privat
+                </span>
+              )}
+              {q.visibility === "private" && (
+                <button
+                  onClick={() => handleMakePublic(q.id)}
+                  disabled={busy}
+                  className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ background: C.panelSoft, color: C.mint, border: `1px solid ${C.mint}55` }}
+                >
+                  Öffentlich machen
+                </button>
+              )}
               <button
                 onClick={() => setSelectedQuizId(q.id)}
                 className="text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
@@ -233,12 +300,32 @@ export function QuizzesTab({ pool }) {
         >
           ← Alle Quizze
         </button>
-        <h2 className="font-bold text-lg" style={{ color: C.text }}>
+        <h2 className="font-bold text-lg flex items-center gap-2" style={{ color: C.text }}>
           {selectedQuiz.title}
+          {selectedQuiz.visibility === "private" && (
+            <span
+              className="text-xs font-semibold rounded-full px-2 py-1"
+              style={{ background: C.dim + "22", color: C.dim }}
+            >
+              🔒 Privat
+            </span>
+          )}
         </h2>
-        <span className="text-sm" style={{ color: C.dim }}>
-          {quizQuestions.length} Fragen
-        </span>
+        <div className="flex items-center gap-3">
+          {selectedQuiz.visibility === "private" && (
+            <button
+              onClick={() => handleMakePublic(selectedQuiz.id)}
+              disabled={busy}
+              className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
+              style={{ background: C.panelSoft, color: C.mint, border: `1px solid ${C.mint}55` }}
+            >
+              Öffentlich machen
+            </button>
+          )}
+          <span className="text-sm" style={{ color: C.dim }}>
+            {quizQuestions.length} Fragen
+          </span>
+        </div>
       </div>
 
       {error && (
