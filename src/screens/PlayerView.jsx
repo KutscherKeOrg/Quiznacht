@@ -18,7 +18,6 @@ export function PlayerView({
   lastPts,
   overrides,
   blur,
-  soundPlaying,
   textInput,
   onTextInputChange,
   onSubmit,
@@ -31,7 +30,6 @@ export function PlayerView({
         currentIndex={currentIndex}
         revealed={revealed}
         blur={blur}
-        soundPlaying={soundPlaying}
       />
       <PlayerPanel
         question={question}

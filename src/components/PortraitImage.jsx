@@ -1,6 +1,9 @@
 export function PortraitImage({ blur, mediaUrl }) {
   return (
-    <div className="rounded-2xl overflow-hidden mx-auto" style={{ width: 220, height: 260, background: "#1A1735" }}>
+    <div
+      className="rounded-2xl overflow-hidden mx-auto w-full"
+      style={{ maxWidth: 480, aspectRatio: "220 / 260", background: "#1A1735" }}
+    >
       {mediaUrl ? (
         <img
           src={mediaUrl}
@@ -9,7 +12,7 @@ export function PortraitImage({ blur, mediaUrl }) {
           style={{ filter: `blur(${blur}px)`, transition: "filter .6s" }}
         />
       ) : (
-        <svg viewBox="0 0 220 260" style={{ filter: `blur(${blur}px)`, transition: "filter .6s" }}>
+        <svg viewBox="0 0 220 260" className="w-full h-full" style={{ filter: `blur(${blur}px)`, transition: "filter .6s" }}>
           <rect width="220" height="260" fill="#241F4A" />
           <circle cx="110" cy="70" r="120" fill="#2E2860" />
           {/* Kapuze */}

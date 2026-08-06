@@ -21,19 +21,20 @@ export function AnswerWidget({
             Antwortzeit ist vorbei.
           </p>
         ) : (
-          <div className="flex gap-2 w-full" style={{ maxWidth: 340 }}>
+          <div className="flex flex-col gap-2 w-full" style={{ maxWidth: 340 }}>
             <input
               type="number"
               inputMode="numeric"
               value={textInput}
               onChange={(e) => onTextInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && textInput !== "" && onSubmit(Number(textInput))}
               placeholder="Deine Schätzung…"
-              className="flex-1 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
+              className="w-full rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
               style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
             />
             <button
               onClick={() => textInput !== "" && onSubmit(Number(textInput))}
-              className="rounded-xl px-5 font-bold focus:outline-none focus:ring-2"
+              className="w-full rounded-xl px-5 py-3 font-bold focus:outline-none focus:ring-2"
               style={{ background: C.gold, color: "#221D00" }}
             >
               Einloggen
@@ -54,18 +55,19 @@ export function AnswerWidget({
             Antwortzeit ist vorbei.
           </p>
         ) : (
-          <div className="flex gap-2 w-full" style={{ maxWidth: 340 }}>
+          <div className="flex flex-col gap-2 w-full" style={{ maxWidth: 340 }}>
             <input
               type="text"
               value={textInput}
               onChange={(e) => onTextInputChange(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && textInput.trim() !== "" && onSubmit(textInput.trim())}
               placeholder="Deine Vermutung…"
-              className="flex-1 rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
+              className="w-full rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2"
               style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
             />
             <button
               onClick={() => textInput.trim() !== "" && onSubmit(textInput.trim())}
-              className="rounded-xl px-5 font-bold focus:outline-none focus:ring-2"
+              className="w-full rounded-xl px-5 py-3 font-bold focus:outline-none focus:ring-2"
               style={{ background: C.gold, color: "#221D00" }}
             >
               Einloggen

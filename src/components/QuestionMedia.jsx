@@ -5,10 +5,11 @@ import { C } from "../theme/colors";
 
 /**
  * Rein darstellende Medienanzeige – nimmt keine Host-Steuerung entgegen,
- * damit sie für Host und Mitspieler exakt identisch aussieht. Steuerung
- * (Blur-Stufen aufdecken, Sound abspielen) sitzt im HostPanel.
+ * damit sie für Host und Mitspieler exakt identisch aussieht. Die
+ * Blur-Stufen-Steuerung für Portraits sitzt im HostPanel; Sound-Play/
+ * Pause/Stop/Lautstärke sind lokale Kontrollen direkt im SoundPlayer.
  */
-export function QuestionMedia({ question, revealed, blur, soundPlaying }) {
+export function QuestionMedia({ question, revealed, blur }) {
   if (question.type === "portrait") {
     const effectiveBlur = question.portrait_display_mode === "sharp" ? 0 : revealed ? 0 : blur;
     return (
@@ -23,7 +24,7 @@ export function QuestionMedia({ question, revealed, blur, soundPlaying }) {
   if (question.type === "sound") {
     return (
       <div className="flex flex-col items-center gap-3">
-        <SoundPlayer playing={soundPlaying} mediaUrl={question.media_url} />
+        <SoundPlayer mediaUrl={question.media_url} />
         <p className="text-xs" style={{ color: C.dim }}>
           {question.note}
         </p>

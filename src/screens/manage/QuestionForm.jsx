@@ -241,6 +241,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
               type="number"
               value={correctValue}
               onChange={(e) => setCorrectValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
               style={inputStyle}
             />
@@ -252,6 +253,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
             <input
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               placeholder="z.B. Seiten"
               className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
               style={inputStyle}
@@ -268,6 +270,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
           <input
             value={correctAnswer}
             onChange={(e) => setCorrectAnswer(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             placeholder="z.B. Alrik der Graue"
             className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
             style={inputStyle}
@@ -296,6 +299,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
                 <input
                   value={opt}
                   onChange={(e) => updateOption(i, e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                   placeholder={`Option ${i + 1}`}
                   className="flex-1 rounded-xl px-4 py-2 focus:outline-none focus:ring-2"
                   style={inputStyle}
@@ -333,6 +337,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
             <input
               value={mediaUrl}
               onChange={(e) => setMediaUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               placeholder="URL einfügen …"
               className="w-full rounded-xl px-4 py-3 mb-2 focus:outline-none focus:ring-2"
               style={inputStyle}
@@ -374,6 +379,7 @@ export function QuestionForm({ categories, initialQuestion, onSave, onCancel, bu
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
               className="w-full rounded-xl px-4 py-3 focus:outline-none focus:ring-2"
               style={inputStyle}
             />
