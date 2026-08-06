@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { QUESTION_TYPES } from "../../data/questionTypes";
 import { createQuiz, deleteQuiz, addQuestionToQuiz, removeQuestionFromQuiz } from "../../lib/poolActions";
+import { QuestionDetails } from "./QuestionDetails";
 import { C } from "../../theme/colors";
 
 export function QuizzesTab({ pool }) {
@@ -14,8 +15,18 @@ export function QuizzesTab({ pool }) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
+  const [expandedIds, setExpandedIds] = useState(new Set());
 
   const selectedQuiz = quizzes.find((q) => q.id === selectedQuizId) ?? null;
+
+  function toggleExpanded(id) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function loadQuizQuestions(quizId) {
     const { data } = await supabase
@@ -214,27 +225,42 @@ export function QuizzesTab({ pool }) {
             )}
             {quizQuestions.map((q, i) => {
               const cat = categoryById[q.category_id];
+              const isExpanded = expandedIds.has(q.id);
               return (
-                <div
-                  key={q.id}
-                  className="rounded-lg px-3 py-2 flex items-center gap-2"
-                  style={{ background: C.panelSoft, border: `1px solid ${C.line}` }}
-                >
-                  <span className="text-xs font-bold w-5" style={{ color: C.dim }}>
-                    {i + 1}.
-                  </span>
-                  {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
-                  <span className="flex-1 text-sm truncate" style={{ color: C.text }} title={q.prompt}>
-                    {q.prompt}
-                  </span>
-                  <button
-                    onClick={() => handleRemove(q.id)}
-                    disabled={busy}
-                    className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
-                    style={{ color: C.pink }}
+                <div key={q.id}>
+                  <div
+                    className="rounded-lg px-3 py-2 flex items-center gap-2"
+                    style={{ background: C.panelSoft, border: `1px solid ${C.line}` }}
                   >
-                    Entfernen
-                  </button>
+                    <span className="text-xs font-bold w-5" style={{ color: C.dim }}>
+                      {i + 1}.
+                    </span>
+                    <button
+                      onClick={() => toggleExpanded(q.id)}
+                      className="shrink-0 text-sm focus:outline-none focus:ring-2"
+                      style={{ color: C.dim }}
+                      aria-label={isExpanded ? "Einklappen" : "Aufklappen"}
+                    >
+                      {isExpanded ? "▾" : "▸"}
+                    </button>
+                    {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
+                    <span
+                      className="flex-1 text-sm truncate cursor-pointer"
+                      onClick={() => toggleExpanded(q.id)}
+                      style={{ color: C.text }}
+                    >
+                      {q.prompt}
+                    </span>
+                    <button
+                      onClick={() => handleRemove(q.id)}
+                      disabled={busy}
+                      className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
+                      style={{ color: C.pink }}
+                    >
+                      Entfernen
+                    </button>
+                  </div>
+                  {isExpanded && <QuestionDetails question={q} />}
                 </div>
               );
             })}
@@ -288,24 +314,39 @@ export function QuizzesTab({ pool }) {
             )}
             {poolCandidates.map((q) => {
               const cat = categoryById[q.category_id];
+              const isExpanded = expandedIds.has(q.id);
               return (
-                <div
-                  key={q.id}
-                  className="rounded-lg px-3 py-2 flex items-center gap-2"
-                  style={{ background: C.panelSoft, border: `1px solid ${C.line}` }}
-                >
-                  {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
-                  <span className="flex-1 text-sm truncate" style={{ color: C.text }} title={q.prompt}>
-                    {q.prompt}
-                  </span>
-                  <button
-                    onClick={() => handleAdd(q.id)}
-                    disabled={busy}
-                    className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
-                    style={{ color: C.mint }}
+                <div key={q.id}>
+                  <div
+                    className="rounded-lg px-3 py-2 flex items-center gap-2"
+                    style={{ background: C.panelSoft, border: `1px solid ${C.line}` }}
                   >
-                    + Hinzufügen
-                  </button>
+                    <button
+                      onClick={() => toggleExpanded(q.id)}
+                      className="shrink-0 text-sm focus:outline-none focus:ring-2"
+                      style={{ color: C.dim }}
+                      aria-label={isExpanded ? "Einklappen" : "Aufklappen"}
+                    >
+                      {isExpanded ? "▾" : "▸"}
+                    </button>
+                    {cat && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: cat.color }} />}
+                    <span
+                      className="flex-1 text-sm truncate cursor-pointer"
+                      onClick={() => toggleExpanded(q.id)}
+                      style={{ color: C.text }}
+                    >
+                      {q.prompt}
+                    </span>
+                    <button
+                      onClick={() => handleAdd(q.id)}
+                      disabled={busy}
+                      className="text-xs px-2 py-1 rounded focus:outline-none focus:ring-2"
+                      style={{ color: C.mint }}
+                    >
+                      + Hinzufügen
+                    </button>
+                  </div>
+                  {isExpanded && <QuestionDetails question={q} />}
                 </div>
               );
             })}

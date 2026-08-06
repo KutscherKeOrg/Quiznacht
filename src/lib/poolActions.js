@@ -65,6 +65,18 @@ export async function bulkCreateQuestions(questions) {
   return data;
 }
 
+export async function bulkDeleteQuestions(ids) {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("questions").delete().in("id", ids);
+  if (error) throw error;
+}
+
+export async function bulkAssignCategory(ids, categoryId) {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from("questions").update({ category_id: categoryId }).in("id", ids);
+  if (error) throw error;
+}
+
 /* ---------- Quizze & Quiz-Zusammenstellung ---------- */
 
 export async function createQuiz(title) {
