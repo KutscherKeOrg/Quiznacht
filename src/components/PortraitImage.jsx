@@ -5,7 +5,7 @@ export function PortraitImage({ blur, mediaUrl }) {
         <img
           src={mediaUrl}
           alt=""
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           style={{ filter: `blur(${blur}px)`, transition: "filter .6s" }}
         />
       ) : (
