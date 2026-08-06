@@ -16,6 +16,7 @@ export function HostPanel({
   revealed,
   locked,
   lastPts,
+  overrides,
   scores,
   blur,
   soundPlaying,
@@ -26,6 +27,7 @@ export function HostPanel({
   onSkip,
   onNext,
   onPrevious,
+  onShowHistory,
 }) {
   const answeredCount = Object.keys(qAnswers).length;
   const isLast = currentIndex + 1 >= totalQuestions;
@@ -120,6 +122,13 @@ export function HostPanel({
           >
             ← Zurück zur vorherigen Frage
           </button>
+          <button
+            onClick={onShowHistory}
+            className="rounded-xl px-4 py-3 font-semibold text-sm focus:outline-none focus:ring-2"
+            style={{ background: C.panelSoft, color: C.sky, border: `1px solid ${C.sky}55` }}
+          >
+            Rundenübersicht
+          </button>
         </div>
       </div>
 
@@ -135,7 +144,7 @@ export function HostPanel({
           <div className="text-xs font-bold tracking-widest mb-4" style={{ color: C.dim }}>
             WER LAG RICHTIG?
           </div>
-          <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} />
+          <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} overrides={overrides} />
         </div>
       )}
     </div>

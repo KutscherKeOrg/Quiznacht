@@ -10,6 +10,7 @@ export function HostView({
   revealed,
   locked,
   lastPts,
+  overrides,
   scores,
   blur,
   onRevealBlurStep,
@@ -20,6 +21,7 @@ export function HostView({
   onSkip,
   onNext,
   onPrevious,
+  onShowHistory,
 }) {
   return (
     <div className="flex flex-col lg:flex-row gap-6">
@@ -40,6 +42,7 @@ export function HostView({
         revealed={revealed}
         locked={locked}
         lastPts={lastPts}
+        overrides={overrides}
         scores={scores}
         blur={blur}
         soundPlaying={soundPlaying}
@@ -50,6 +53,7 @@ export function HostView({
         onSkip={onSkip}
         onNext={onNext}
         onPrevious={onPrevious}
+        onShowHistory={onShowHistory}
       />
     </div>
   );

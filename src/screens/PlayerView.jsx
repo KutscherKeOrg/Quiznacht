@@ -16,6 +16,7 @@ export function PlayerView({
   scores,
   youId,
   lastPts,
+  overrides,
   blur,
   soundPlaying,
   textInput,
@@ -46,6 +47,7 @@ export function PlayerView({
         scores={scores}
         youId={youId}
         lastPts={lastPts}
+        overrides={overrides}
         textInput={textInput}
         onTextInputChange={onTextInputChange}
         onSubmit={onSubmit}

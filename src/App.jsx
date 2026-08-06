@@ -20,6 +20,7 @@ import {
   updateBlur,
   setSoundPlaying,
   submitAnswer,
+  setAnswerOverride,
 } from "./lib/roomActions";
 import { Header } from "./components/Header";
 import { BackgroundMusic } from "./components/BackgroundMusic";
@@ -29,6 +30,7 @@ import { LobbyScreen } from "./screens/LobbyScreen";
 import { HostView } from "./screens/HostView";
 import { PlayerView } from "./screens/PlayerView";
 import { EndScreen } from "./screens/EndScreen";
+import { RoundHistoryScreen } from "./screens/RoundHistoryScreen";
 import { ManageScreen } from "./screens/ManageScreen";
 import { StatsScreen } from "./screens/StatsScreen";
 import { C } from "./theme/colors";
@@ -36,9 +38,17 @@ import { C } from "./theme/colors";
 export default function App() {
   const { user, profile, loading: authLoading } = useAuth();
   const [roomSession, setRoomSession] = useRoomSession();
-  const { room, players, questions, answersByQuestion, elapsedByQuestion, loading, error: roomError, refetchAnswers } = useRoom(
-    roomSession?.roomId ?? null
-  );
+  const {
+    room,
+    players,
+    questions,
+    answersByQuestion,
+    elapsedByQuestion,
+    overridesByQuestion,
+    loading,
+    error: roomError,
+    refetchAnswers,
+  } = useRoom(roomSession?.roomId ?? null);
 
   const [area, setArea] = useState("play"); // 'play' | 'manage' | 'stats' (nur relevant außerhalb eines Raums)
   const [quizzes, setQuizzes] = useState([]);
@@ -46,6 +56,7 @@ export default function App() {
   const [actionError, setActionError] = useState("");
   const [textInput, setTextInput] = useState("");
   const [pendingAnswer, setPendingAnswer] = useState(undefined);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Quiz-Liste laden, wenn wir zur Start-Ansicht wechseln (auch nach dem
   // Anlegen neuer Quizze im Verwaltungsbereich, oder sobald der Login
@@ -73,6 +84,12 @@ export default function App() {
       setRoomSession(null);
     }
   }, [roomSession, loading, roomError, setRoomSession]);
+
+  // Rundenübersicht ausblenden, sobald ein (neu gestartetes) Quiz wieder in
+  // der Lobby landet, damit "Nochmal spielen" nicht in der alten Übersicht hängt.
+  useEffect(() => {
+    if (room?.phase === "lobby") setShowHistory(false);
+  }, [room?.phase]);
 
   async function handleCreateRoom(quizId) {
     setBusy(true);
@@ -147,8 +164,17 @@ export default function App() {
 
   const scores = useMemo(() => {
     if (!room) return {};
-    return computeScores({ questions, answersByQuestion, elapsedByQuestion, players, currentIndex, revealed, phase: room.phase });
-  }, [room, questions, answersByQuestion, elapsedByQuestion, players, currentIndex, revealed]);
+    return computeScores({
+      questions,
+      answersByQuestion,
+      elapsedByQuestion,
+      overridesByQuestion,
+      players,
+      currentIndex,
+      revealed,
+      phase: room.phase,
+    });
+  }, [room, questions, answersByQuestion, elapsedByQuestion, overridesByQuestion, players, currentIndex, revealed]);
 
   const lastPts = useMemo(() => {
     if (!question || !(revealed || room?.phase === "end")) return {};
@@ -156,9 +182,15 @@ export default function App() {
       question,
       qAnswers,
       players.map((p) => p.id),
-      elapsedByQuestion[question.id] || {}
+      elapsedByQuestion[question.id] || {},
+      overridesByQuestion[question.id] || {}
     );
-  }, [question, revealed, room?.phase, qAnswers, players, elapsedByQuestion]);
+  }, [question, revealed, room?.phase, qAnswers, players, elapsedByQuestion, overridesByQuestion]);
+
+  async function handleSetOverride(questionId, playerId, override) {
+    await setAnswerOverride(room.id, questionId, playerId, override);
+    await refetchAnswers();
+  }
 
   async function advanceOrFinish() {
     const isLast = currentIndex + 1 >= questions.length;
@@ -234,6 +266,21 @@ export default function App() {
         Verbinde mit Raum…
       </p>
     );
+  } else if (showHistory && isHost) {
+    content = (
+      <RoundHistoryScreen
+        questions={questions}
+        currentIndex={currentIndex}
+        revealed={revealed}
+        phase={room.phase}
+        players={players}
+        answersByQuestion={answersByQuestion}
+        elapsedByQuestion={elapsedByQuestion}
+        overridesByQuestion={overridesByQuestion}
+        onSetOverride={handleSetOverride}
+        onBack={() => setShowHistory(false)}
+      />
+    );
   } else if (room.phase === "lobby") {
     content = (
       <LobbyScreen
@@ -253,6 +300,7 @@ export default function App() {
         youId={roomSession.playerId}
         isHost={isHost}
         onRestart={() => restartRoom(room.id)}
+        onShowHistory={() => setShowHistory(true)}
       />
     );
   } else if (!question) {
@@ -272,6 +320,7 @@ export default function App() {
         revealed={revealed}
         locked={room.locked}
         lastPts={lastPts}
+        overrides={overridesByQuestion[question.id] || {}}
         scores={scores}
         blur={room.blur}
         onRevealBlurStep={() => updateBlur(room.id, Math.max(0, room.blur - 5))}
@@ -282,6 +331,7 @@ export default function App() {
         onSkip={handleSkip}
         onNext={handleNext}
         onPrevious={handlePrevious}
+        onShowHistory={() => setShowHistory(true)}
       />
     );
   } else {
@@ -302,6 +352,7 @@ export default function App() {
         scores={scores}
         youId={roomSession.playerId}
         lastPts={lastPts}
+        overrides={overridesByQuestion[question.id] || {}}
         blur={room.blur}
         soundPlaying={room.sound_playing}
         textInput={textInput}

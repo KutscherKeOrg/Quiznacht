@@ -100,6 +100,13 @@ export function useRoom(roomId) {
           setAnswers((prev) => prev.filter((a) => a.id !== payload.old.id));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "answers", filter: `room_id=eq.${roomId}` },
+        (payload) => {
+          setAnswers((prev) => prev.map((a) => (a.id === payload.new.id ? payload.new : a)));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -129,6 +136,16 @@ export function useRoom(roomId) {
     return map;
   }, [answers]);
 
+  // Manuelle Host-Korrekturen (null/undefined = automatischer Abgleich gilt).
+  const overridesByQuestion = useMemo(() => {
+    const map = {};
+    answers.forEach((a) => {
+      if (!map[a.question_id]) map[a.question_id] = {};
+      map[a.question_id][a.player_id] = a.correct_override;
+    });
+    return map;
+  }, [answers]);
+
   /**
    * Erzwingt einen frischen Antworten-Abgleich mit der DB, statt auf das
    * Eintreffen des Realtime-Events zu warten. Für Moderator-Aktionen, die
@@ -141,5 +158,16 @@ export function useRoom(roomId) {
     setAnswers(data || []);
   }
 
-  return { room, players, questions, answers, answersByQuestion, elapsedByQuestion, loading, error, refetchAnswers };
+  return {
+    room,
+    players,
+    questions,
+    answers,
+    answersByQuestion,
+    elapsedByQuestion,
+    overridesByQuestion,
+    loading,
+    error,
+    refetchAnswers,
+  };
 }

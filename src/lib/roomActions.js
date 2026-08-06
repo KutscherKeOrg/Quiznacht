@@ -198,3 +198,18 @@ export async function submitAnswer(roomId, questionId, playerId, value, elapsedM
     });
   if (error) throw error;
 }
+
+/**
+ * Host-Korrektur: übersteuert den automatischen Abgleich für eine einzelne
+ * Antwort. `override` ist true/false für "manuell richtig/falsch" oder
+ * null, um wieder zum automatischen Abgleich zurückzukehren.
+ */
+export async function setAnswerOverride(roomId, questionId, playerId, override) {
+  const { error } = await supabase
+    .from("answers")
+    .update({ correct_override: override })
+    .eq("room_id", roomId)
+    .eq("question_id", questionId)
+    .eq("player_id", playerId);
+  if (error) throw error;
+}

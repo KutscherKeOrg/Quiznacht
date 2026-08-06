@@ -2,13 +2,12 @@ import { effectiveCorrectness } from "../lib/quizLogic";
 import { C } from "../theme/colors";
 
 /**
- * Wer hatte recht, wer lag falsch – nach dem Auflösen sowohl im HostPanel
- * als auch im PlayerPanel verwendet. Schätzfragen haben kein binäres
- * richtig/falsch, daher hier stattdessen nach Nähe sortiert. Berücksichtigt
- * nachträgliche Host-Korrekturen (overrides), damit auch Mitspieler:innen
- * sehen, wenn eine Antwort manuell umgewertet wurde.
+ * Wie AnswerResultsList, aber host-only und mit Korrektur-Buttons: jede
+ * Antwort kann unabhängig vom automatischen Abgleich manuell als richtig
+ * oder falsch markiert werden. Schätzfragen werden nach Nähe gerankt statt
+ * binär bewertet, deshalb gibt es dort keine Korrektur-Buttons.
  */
-export function AnswerResultsList({ question, players, qAnswers, lastPts, overrides = {} }) {
+export function AnswerCorrectionList({ question, players, qAnswers, lastPts, overrides, onSetOverride }) {
   const answered = players.filter((p) => qAnswers[p.id] !== undefined);
 
   if (answered.length === 0) {
@@ -50,7 +49,7 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts, overri
         return (
           <div
             key={p.id}
-            className="flex justify-between items-center text-sm rounded-lg px-3 py-2"
+            className="flex justify-between items-center text-sm rounded-lg px-3 py-2 flex-wrap gap-2"
             style={{ background: C.panelSoft }}
           >
             <span className="flex items-center gap-1" style={{ color: C.text }}>
@@ -61,12 +60,28 @@ export function AnswerResultsList({ question, players, qAnswers, lastPts, overri
                 </span>
               )}
             </span>
-            <span className="flex items-center gap-2">
+            <span className="flex items-center gap-2 flex-wrap">
               <span style={{ color: C.dim }}>{qAnswers[p.id]}</span>
               {correct && (
                 <span style={{ color: C.mint, fontVariantNumeric: "tabular-nums" }}>+{lastPts[p.id] ?? 0}</span>
               )}
               <span style={{ color: correct ? C.mint : C.pink, fontWeight: 700 }}>{correct ? "✓" : "✗"}</span>
+              <button
+                onClick={() => onSetOverride(p.id, !correct)}
+                className="text-xs px-2 py-1 rounded-lg focus:outline-none focus:ring-2"
+                style={{ background: C.panel, border: `1px solid ${C.line}`, color: C.dim }}
+              >
+                {correct ? "Als falsch markieren" : "Als richtig markieren"}
+              </button>
+              {isCorrected && (
+                <button
+                  onClick={() => onSetOverride(p.id, null)}
+                  className="text-xs px-2 py-1 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ color: C.dim }}
+                >
+                  Zurücksetzen
+                </button>
+              )}
             </span>
           </div>
         );

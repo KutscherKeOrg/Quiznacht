@@ -22,6 +22,7 @@ export function PlayerPanel({
   scores,
   youId,
   lastPts,
+  overrides,
   textInput,
   onTextInputChange,
   onSubmit,
@@ -80,7 +81,7 @@ export function PlayerPanel({
               <div className="text-xs font-bold tracking-widest mb-3" style={{ color: C.dim }}>
                 WER LAG RICHTIG?
               </div>
-              <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} />
+              <AnswerResultsList question={question} players={players} qAnswers={qAnswers} lastPts={lastPts} overrides={overrides} />
             </div>
           </>
         )}

@@ -27,15 +27,28 @@ export function isAnswerCorrect(question, value) {
 }
 
 /**
+ * Wie isAnswerCorrect, aber eine manuelle Host-Korrektur (true/false)
+ * überstimmt den automatischen Abgleich. `override` ist null/undefined,
+ * solange niemand nachträglich korrigiert hat.
+ */
+export function effectiveCorrectness(question, value, override) {
+  if (override === true || override === false) return override;
+  return isAnswerCorrect(question, value);
+}
+
+/**
  * @param {object} question - Fragen-Zeile aus der DB (type, correct_answer, correct_value, answer_mode)
  * @param {Record<string, string>} answersByPlayerId - { [playerId]: abgegebener Wert (immer als Text) }
  * @param {string[]} playerIds
  * @param {Record<string, number>} elapsedByPlayerId - { [playerId]: Antwortzeit in ms }, für den Tempo-Rang
+ * @param {Record<string, boolean>} overridesByPlayerId - { [playerId]: manuelle Korrektur oder null }
  * @returns {Record<string, number>} { [playerId]: Punkte für diese Frage }
  */
-export function pointsForQuestion(question, answersByPlayerId, playerIds, elapsedByPlayerId = {}) {
+export function pointsForQuestion(question, answersByPlayerId, playerIds, elapsedByPlayerId = {}, overridesByPlayerId = {}) {
   const pts = {};
   if (question.type === "schaetzfrage") {
+    // Schätzfragen werden nach Nähe gerankt, nicht binär richtig/falsch -
+    // eine nachträgliche Korrektur ergibt hier keinen Sinn und wird ignoriert.
     const ranked = playerIds
       .filter((id) => answersByPlayerId[id] !== undefined)
       .map((id) => ({ id, d: Math.abs(Number(answersByPlayerId[id]) - question.correct_value) }))
@@ -48,7 +61,7 @@ export function pointsForQuestion(question, answersByPlayerId, playerIds, elapse
       pts[id] = 0;
     });
     const correctBySpeed = playerIds
-      .filter((id) => isAnswerCorrect(question, answersByPlayerId[id]))
+      .filter((id) => effectiveCorrectness(question, answersByPlayerId[id], overridesByPlayerId[id]))
       .sort((a, b) => (elapsedByPlayerId[a] ?? Infinity) - (elapsedByPlayerId[b] ?? Infinity));
     correctBySpeed.forEach((id, i) => {
       pts[id] = RANK_POINTS[i] ?? RANK_POINTS_FLOOR;
@@ -62,7 +75,7 @@ export function pointsForQuestion(question, answersByPlayerId, playerIds, elapse
  * Eine Frage zählt als "abgeschlossen", wenn sie vor der aktuellen liegt,
  * die aktuelle ist und aufgelöst wurde, oder das Quiz vorbei ist.
  */
-export function computeScores({ questions, answersByQuestion, elapsedByQuestion, players, currentIndex, revealed, phase }) {
+export function computeScores({ questions, answersByQuestion, elapsedByQuestion, overridesByQuestion, players, currentIndex, revealed, phase }) {
   const playerIds = players.map((p) => p.id);
   const scores = {};
   playerIds.forEach((id) => (scores[id] = 0));
@@ -72,7 +85,8 @@ export function computeScores({ questions, answersByQuestion, elapsedByQuestion,
     if (!done) return;
     const answersForQuestion = answersByQuestion[question.id] || {};
     const elapsedForQuestion = (elapsedByQuestion && elapsedByQuestion[question.id]) || {};
-    const pts = pointsForQuestion(question, answersForQuestion, playerIds, elapsedForQuestion);
+    const overridesForQuestion = (overridesByQuestion && overridesByQuestion[question.id]) || {};
+    const pts = pointsForQuestion(question, answersForQuestion, playerIds, elapsedForQuestion, overridesForQuestion);
     playerIds.forEach((id) => {
       scores[id] += pts[id] || 0;
     });
