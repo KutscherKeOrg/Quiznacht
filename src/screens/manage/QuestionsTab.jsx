@@ -1,47 +1,55 @@
 import { useMemo, useState } from "react";
-import { QUESTION_TYPES, PORTRAIT_DISPLAY_MODES } from "../../data/questionTypes";
-import { createQuestion, updateQuestion, deleteQuestion, bulkDeleteQuestions, bulkAssignCategory } from "../../lib/poolActions";
+import { QUESTION_TYPES } from "../../data/questionTypes";
+import { createQuestion, updateQuestion } from "../../lib/poolActions";
 import { QuestionForm } from "./QuestionForm";
-import { QuestionDetails } from "./QuestionDetails";
+import { CategoryQuestionsSection } from "./CategoryQuestionsSection";
 import { BulkImportForm } from "./BulkImportForm";
 import { WhatsAppImportForm } from "./WhatsAppImportForm";
 import { C } from "../../theme/colors";
 
-function formatDate(iso) {
-  if (!iso) return null;
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
+const UNCATEGORIZED = { id: null, name: "Ohne Kategorie", color: C.dim };
 
 export function QuestionsTab({ pool }) {
-  const { categories, questions, refresh } = pool;
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const { categories, questions, lockedQuestionIds, refresh } = pool;
   const [typeFilter, setTypeFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [mode, setMode] = useState("list"); // 'list' | 'create' | { edit: question }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [expandedIds, setExpandedIds] = useState(new Set());
-  const [selectedIds, setSelectedIds] = useState(new Set());
-  const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState(new Set());
+  const [refreshTick, setRefreshTick] = useState(0);
 
-  const categoryById = useMemo(() => {
-    const map = {};
-    categories.forEach((c) => (map[c.id] = c));
-    return map;
-  }, [categories]);
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return questions.filter((q) => {
-      if (categoryFilter !== "all" && q.category_id !== categoryFilter) return false;
-      if (typeFilter !== "all" && q.type !== typeFilter) return false;
-      if (term) {
-        const haystack = [q.prompt, q.message, ...(q.options || [])].filter(Boolean).join(" ").toLowerCase();
-        if (!haystack.includes(term)) return false;
+  // Statistiken kommen aus dem ohnehin schon geladenen pool.questions -
+  // rein clientseitig aus dem Speicher berechnet, keine extra Abfrage.
+  // Nur die eigentlichen Fragenlisten je aufgeklappter Kategorie werden
+  // unten seitenweise vom Server nachgeladen.
+  const stats = useMemo(() => {
+    const byCategory = {};
+    const byType = {};
+    let unplayed = 0;
+    questions.forEach((q) => {
+      const key = q.category_id ?? "none";
+      if (!byCategory[key]) byCategory[key] = { total: 0, unplayed: 0 };
+      byCategory[key].total++;
+      if (!q.last_played_at) {
+        byCategory[key].unplayed++;
+        unplayed++;
       }
-      return true;
+      byType[q.type] = (byType[q.type] || 0) + 1;
     });
-  }, [questions, categoryFilter, typeFilter, search]);
+    return { total: questions.length, unplayed, byCategory, byType };
+  }, [questions]);
+
+  const sections = useMemo(() => {
+    const list = [...categories];
+    if (stats.byCategory.none?.total > 0) list.push(UNCATEGORIZED);
+    return list;
+  }, [categories, stats]);
+
+  async function notifyMutated() {
+    setRefreshTick((t) => t + 1);
+    await refresh();
+  }
 
   async function handleSave(fields) {
     setBusy(true);
@@ -53,7 +61,7 @@ export function QuestionsTab({ pool }) {
         await createQuestion(fields);
       }
       setMode("list");
-      await refresh();
+      await notifyMutated();
     } catch (err) {
       setError("Konnte nicht gespeichert werden: " + err.message);
     } finally {
@@ -61,75 +69,13 @@ export function QuestionsTab({ pool }) {
     }
   }
 
-  async function handleDelete(id) {
-    if (!confirm("Frage wirklich löschen?")) return;
-    setBusy(true);
-    setError("");
-    try {
-      await deleteQuestion(id);
-      await refresh();
-    } catch (err) {
-      setError("Konnte nicht gelöscht werden: " + err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function toggleExpanded(id) {
-    setExpandedIds((prev) => {
+  function toggleCategoryExpanded(id) {
+    setExpandedCategoryIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
-
-  function toggleSelected(id) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function selectAllFiltered() {
-    setSelectedIds(new Set(filtered.map((q) => q.id)));
-  }
-
-  function clearSelection() {
-    setSelectedIds(new Set());
-  }
-
-  async function handleBulkDelete() {
-    if (!confirm(`${selectedIds.size} Fragen wirklich löschen?`)) return;
-    setBusy(true);
-    setError("");
-    try {
-      await bulkDeleteQuestions([...selectedIds]);
-      setSelectedIds(new Set());
-      await refresh();
-    } catch (err) {
-      setError("Konnte nicht gelöscht werden: " + err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleBulkAssignCategory() {
-    if (!bulkCategoryId) return;
-    setBusy(true);
-    setError("");
-    try {
-      await bulkAssignCategory([...selectedIds], bulkCategoryId);
-      setSelectedIds(new Set());
-      setBulkCategoryId("");
-      await refresh();
-    } catch (err) {
-      setError("Konnte nicht zugewiesen werden: " + err.message);
-    } finally {
-      setBusy(false);
-    }
   }
 
   if (mode === "create" || mode?.edit) {
@@ -158,7 +104,7 @@ export function QuestionsTab({ pool }) {
         onCancel={() => setMode("list")}
         onDone={async () => {
           setMode("list");
-          await refresh();
+          await notifyMutated();
         }}
       />
     );
@@ -169,7 +115,7 @@ export function QuestionsTab({ pool }) {
       <WhatsAppImportForm
         onExit={async () => {
           setMode("list");
-          await refresh();
+          await notifyMutated();
         }}
       />
     );
@@ -179,19 +125,6 @@ export function QuestionsTab({ pool }) {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div className="flex gap-3 flex-wrap flex-1">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2"
-            style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
-          >
-            <option value="all">Alle Kategorien</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
@@ -252,143 +185,90 @@ export function QuestionsTab({ pool }) {
         </p>
       )}
 
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-        <div className="flex gap-2">
-          <button
-            onClick={selectAllFiltered}
-            disabled={filtered.length === 0}
-            className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50"
-            style={{ background: C.panelSoft, color: C.dim }}
-          >
-            Alle auswählen
-          </button>
-          <button
-            onClick={clearSelection}
-            disabled={selectedIds.size === 0}
-            className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50"
-            style={{ background: C.panelSoft, color: C.dim }}
-          >
-            Auswahl aufheben
-          </button>
-        </div>
-
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs" style={{ color: C.dim }}>
-              {selectedIds.size} ausgewählt
-            </span>
-            <select
-              value={bulkCategoryId}
-              onChange={(e) => setBulkCategoryId(e.target.value)}
-              className="rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2"
-              style={{ background: C.panelSoft, border: `1px solid ${C.line}`, color: C.text }}
-            >
-              <option value="">Kategorie wählen…</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <button
-              disabled={busy || !bulkCategoryId}
-              onClick={handleBulkAssignCategory}
-              className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50"
-              style={{ background: C.violet + "33", color: C.violet }}
-            >
-              Zuweisen
-            </button>
-            <button
-              disabled={busy}
-              onClick={handleBulkDelete}
-              className="text-xs font-semibold px-3 py-2 rounded-lg focus:outline-none focus:ring-2 disabled:opacity-50"
-              style={{ background: C.pink + "22", color: C.pink }}
-            >
-              Ausgewählte löschen
-            </button>
+      <div className="rounded-2xl p-5 mb-6" style={{ background: C.panel, border: `1px solid ${C.line}` }}>
+        <div className="flex items-baseline gap-6 mb-4 flex-wrap">
+          <div>
+            <div className="text-2xl font-bold" style={{ color: C.text }}>
+              {stats.total}
+            </div>
+            <div className="text-xs" style={{ color: C.dim }}>
+              Fragen insgesamt
+            </div>
           </div>
-        )}
+          <div>
+            <div className="text-2xl font-bold" style={{ color: C.mint }}>
+              {stats.unplayed}
+            </div>
+            <div className="text-xs" style={{ color: C.dim }}>
+              ungespielt
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-2">
+          {sections.map((c) => (
+            <span
+              key={c.id ?? "none"}
+              className="text-xs font-semibold rounded-full px-2 py-1"
+              style={{ background: c.color + "22", color: c.color }}
+            >
+              {c.name}: {stats.byCategory[c.id ?? "none"]?.total ?? 0}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(QUESTION_TYPES).map(([key, meta]) => (
+            <span
+              key={key}
+              className="text-xs font-semibold rounded-full px-2 py-1"
+              style={{ background: meta.color + "22", color: meta.color }}
+            >
+              {meta.label}: {stats.byType[key] ?? 0}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        {filtered.length === 0 && (
+        {sections.length === 0 && (
           <p className="text-center text-sm" style={{ color: C.dim }}>
-            Keine Fragen gefunden.
+            Noch keine Kategorien angelegt.
           </p>
         )}
-        {filtered.map((q) => {
-          const cat = categoryById[q.category_id];
-          const typeMeta = QUESTION_TYPES[q.type];
-          const playedDate = formatDate(q.last_played_at);
-          const isExpanded = expandedIds.has(q.id);
+        {sections.map((c) => {
+          const key = c.id ?? "none";
+          const isExpanded = expandedCategoryIds.has(key);
+          const count = stats.byCategory[key]?.total ?? 0;
           return (
-            <div key={q.id}>
-              <div
-                className="rounded-xl px-4 py-3 flex items-center gap-3 flex-wrap"
-                style={{ background: C.panel, border: `1px solid ${C.line}` }}
+            <div key={key} className="rounded-xl overflow-hidden" style={{ background: C.panel, border: `1px solid ${C.line}` }}>
+              <button
+                onClick={() => toggleCategoryExpanded(key)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left focus:outline-none focus:ring-2"
               >
-                <input
-                  type="checkbox"
-                  checked={selectedIds.has(q.id)}
-                  onChange={() => toggleSelected(q.id)}
-                  className="w-4 h-4 shrink-0"
-                />
-                <button
-                  onClick={() => toggleExpanded(q.id)}
-                  className="shrink-0 w-5 text-sm focus:outline-none focus:ring-2"
-                  style={{ color: C.dim }}
-                  aria-label={isExpanded ? "Einklappen" : "Aufklappen"}
-                >
+                <span className="text-sm shrink-0" style={{ color: C.dim }}>
                   {isExpanded ? "▾" : "▸"}
-                </button>
-                <span
-                  className="text-xs font-semibold uppercase rounded-full px-2 py-1 shrink-0"
-                  style={{ background: typeMeta.color + "22", color: typeMeta.color }}
-                >
-                  {typeMeta.label}
                 </span>
-                {q.type === "portrait" && (
-                  <span
-                    className="text-xs rounded-full px-2 py-1 shrink-0"
-                    title={PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label}
-                    style={{ background: C.panelSoft, color: C.dim, border: `1px solid ${C.line}` }}
-                  >
-                    {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].icon}{" "}
-                    {PORTRAIT_DISPLAY_MODES[q.portrait_display_mode ?? "blur"].label}
-                  </span>
-                )}
-                {cat && (
-                  <span className="text-xs font-semibold rounded-full px-2 py-1 shrink-0" style={{ background: cat.color + "22", color: cat.color }}>
-                    {cat.name}
-                  </span>
-                )}
-                <span
-                  className="flex-1 min-w-[200px] text-sm truncate cursor-pointer"
-                  onClick={() => toggleExpanded(q.id)}
-                  style={{ color: C.text }}
-                >
-                  {q.prompt}
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: c.color }} />
+                <span className="font-semibold" style={{ color: C.text }}>
+                  {c.name}
                 </span>
-                <span className="text-xs shrink-0" style={{ color: playedDate ? C.mint : C.dim }}>
-                  {playedDate ? `Gespielt am ${playedDate}` : "Ungespielt"}
+                <span className="text-sm" style={{ color: C.dim }}>
+                  ({count})
                 </span>
-                <button
-                  onClick={() => setMode({ edit: q })}
-                  className="text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ background: C.panelSoft, color: C.dim }}
-                >
-                  Bearbeiten
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() => handleDelete(q.id)}
-                  className="text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2"
-                  style={{ background: C.pink + "22", color: C.pink }}
-                >
-                  Löschen
-                </button>
-              </div>
-              {isExpanded && <QuestionDetails question={q} />}
+              </button>
+              {isExpanded && (
+                <div className="px-4 pb-4">
+                  <CategoryQuestionsSection
+                    category={c}
+                    categories={categories}
+                    typeFilter={typeFilter}
+                    search={search}
+                    lockedQuestionIds={lockedQuestionIds}
+                    refreshTick={refreshTick}
+                    onEdit={(q) => setMode({ edit: q })}
+                    onMutated={notifyMutated}
+                  />
+                </div>
+              )}
             </div>
           );
         })}

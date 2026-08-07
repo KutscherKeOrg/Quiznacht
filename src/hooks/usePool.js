@@ -16,6 +16,7 @@ export function usePool(ownerId) {
   const [categories, setCategories] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
+  const [lockedQuestionIds, setLockedQuestionIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
 
@@ -42,10 +43,12 @@ export function usePool(ownerId) {
         .neq("quiz.owner_id", ownerId),
       supabase.from("questions").select("*").order("created_at", { ascending: false }),
     ]);
-    const lockedIds = new Set((lockedRes.data || []).map((row) => row.question_id));
+    const lockedIdsArr = [...new Set((lockedRes.data || []).map((row) => row.question_id))];
+    const lockedIds = new Set(lockedIdsArr);
     setCategories(categoriesRes.data || []);
     setQuizzes(quizzesRes.data || []);
     setQuestions((questionsRes.data || []).filter((q) => !lockedIds.has(q.id)));
+    setLockedQuestionIds(lockedIdsArr);
     setLoading(false);
     hasLoadedOnce.current = true;
   }, [ownerId]);
@@ -54,5 +57,5 @@ export function usePool(ownerId) {
     refresh();
   }, [refresh]);
 
-  return { categories, questions, quizzes, loading, refresh };
+  return { categories, questions, quizzes, lockedQuestionIds, loading, refresh };
 }
